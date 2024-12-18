@@ -4,10 +4,10 @@ import java.io.File;
 import java.util.Scanner;
 
 public class Instance {
-    static int numberNodes;
-    static int numberEdges;
-    static int seed;
-    static int k;
+    private int numberNodes;
+    private int numberEdges;
+    private int seed;
+    private int k;
 
     HashMap<Integer, ArrayList<Integer>> graph = new HashMap<>();
 
@@ -22,13 +22,20 @@ public class Instance {
             for(int i = 0; i < numberEdges; i++) {
                 String[] sEdge = reader.nextLine().split(" ");
                 int[] edge = {Integer.parseInt(sEdge[0]), Integer.parseInt(sEdge[1])};
-                ArrayList<Integer> edgeList = graph.getOrDefault(edge[0], new ArrayList<>());
-                edgeList.add(edge[1]);
-                graph.put(edge[0], edgeList);
+                ArrayList<Integer> edgeListStart = graph.getOrDefault(edge[0], new ArrayList<>());
+                ArrayList<Integer> edgeListEnd = graph.getOrDefault(edge[1], new ArrayList<>());
+                edgeListStart.add(edge[1]);
+                edgeListEnd.add(edge[0]);
+                graph.put(edge[0], edgeListStart);
+                graph.put(edge[1], edgeListEnd);
             }
         }
         catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public int getNumberNodes() {
+        return numberNodes;
     }
 }
