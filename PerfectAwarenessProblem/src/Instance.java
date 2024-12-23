@@ -22,12 +22,18 @@ public class Instance {
             for(int i = 0; i < numberEdges; i++) {
                 String[] sEdge = reader.nextLine().split(" ");
                 int[] edge = {Integer.parseInt(sEdge[0]), Integer.parseInt(sEdge[1])};
-                ArrayList<Integer> edgeListStart = graph.getOrDefault(edge[0], new ArrayList<>());
-                ArrayList<Integer> edgeListEnd = graph.getOrDefault(edge[1], new ArrayList<>());
-                edgeListStart.add(edge[1]);
-                edgeListEnd.add(edge[0]);
-                graph.put(edge[0], edgeListStart);
-                graph.put(edge[1], edgeListEnd);
+                if(edge[0] != edge[1]) {
+                    ArrayList<Integer> edgeListStart = graph.getOrDefault(edge[0], new ArrayList<>());
+                    ArrayList<Integer> edgeListEnd = graph.getOrDefault(edge[1], new ArrayList<>());
+                    if (!edgeListStart.contains(edge[1])) {
+                        edgeListStart.add(edge[1]);
+                    }
+                    if (!edgeListEnd.contains(edge[0])) {
+                        edgeListEnd.add(edge[0]);
+                    }
+                    graph.put(edge[0], edgeListStart);
+                    graph.put(edge[1], edgeListEnd);
+                }
             }
         }
         catch (Exception e) {
