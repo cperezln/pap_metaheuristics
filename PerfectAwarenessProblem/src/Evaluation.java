@@ -19,7 +19,7 @@ public class Evaluation {
         HashSet<Integer> spreadersTaup = new HashSet<>(sol.getSolution());
         HashSet<Integer> aware = new HashSet<>(sol.getSolution());
         HashSet<Integer> visited = new HashSet<>();
-        while(spreadersTau != spreadersTaup && qSpreaders.size() > 0) {
+        while(spreadersTau != spreadersTaup && qSpreaders.size() > 0 && aware.size() != instance.getNumberNodes()) {
             spreadersTau.addAll(spreadersTaup);
             int node = qSpreaders.poll();
             if(!visited.contains(node)) {

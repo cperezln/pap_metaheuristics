@@ -1,3 +1,4 @@
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.io.File;
@@ -43,5 +44,9 @@ public class Instance {
 
     public int getNumberNodes() {
         return numberNodes;
+    }
+
+    public ArrayList<Integer> getNodes() {
+        return new ArrayList<Integer>(this.graph.keySet());
     }
 }
