@@ -4,7 +4,7 @@ import os
 if __name__ == "__main__":
     # Carga del archivo Excel y hoja específica
     excel_path = '/home/cristian/Escritorio/TFM/pap_metaheuristics/results.xlsx'
-    dir_results = "/home/cristian/Escritorio/TFM/pap_metaheuristics/solutions/random_solutions"
+    dir_results = "/home/cristian/Escritorio/TFM/pap_metaheuristics/solutions/greedy_solutions"
 
     # Leer el archivo Excel y la hoja Our
     df = pd.read_excel(excel_path, sheet_name='Our')
@@ -15,11 +15,11 @@ if __name__ == "__main__":
             lines = f.readlines()
             name = lines[0].strip() + '.sol'
             seed_size = int(lines[1])
+            time = int(lines[2])
 
             # Actualizar el DataFrame
-            print(df.loc[df['Name'] == name, 'Seed Size'])
             df.loc[df['Name'] == name, 'Seed Size'] = seed_size
-            print(df.loc[df['Name'] == name, 'Seed Size'])
+            df.loc[df['Name'] == name, 'Time'] = time/10**9
 
 
     # Guardar los cambios en el archivo Excel

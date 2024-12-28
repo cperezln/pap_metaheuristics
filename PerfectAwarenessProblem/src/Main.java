@@ -6,18 +6,34 @@ import java.io.UnsupportedEncodingException;
 import java.util.*;
 import java.util.stream.IntStream;
 
- class Pair implements Comparable<Pair>{
+ class PairDeg implements Comparable<PairDeg>{
     int node;
     int deg;
-    public Pair(int node, int deg){
+    public PairDeg(int node, int deg){
         this.node = node;
         this.deg = deg;
     }
 
 
     @Override
-    public int compareTo(Pair o) {
+    public int compareTo(PairDeg o) {
         return o.deg - this.deg;
+    }
+}
+
+class PairVal implements Comparable<PairVal>{
+    int node;
+    double val;
+    public PairVal(int node, double val){
+        this.node = node;
+        this.val = val;
+    }
+
+
+    @Override
+    public int compareTo(PairVal o) {
+        if(o.val - this.val < 0) return -1;
+        else return 1;
     }
 }
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
@@ -136,7 +152,7 @@ public class Main {
                 break;
             }
         }
-        // 3. Generador voraz de soluciones
+        // 3. Generador voraz-aleatorio de soluciones
         /*
         No es trivial cómo generar soluciones para el problema. El PAP busca soluciones que sean perfect seed (es decir, que con el conjunto seleccionado de nodos consiga que todos los nodos estén aware)
         Está claro que soluciones triviales son todos los nodos, todos los nodos -1, todos los nodos -2,... La aproximación que voy a intertar tomar tiene un componente aleatorio,  pero también está dirigido.
@@ -149,9 +165,9 @@ public class Main {
                 //i = new File("/home/cristian/Escritorio/TFM/pap_metaheuristics/previous_work/instances/800_799_1_social_0.in");
                 // i = new File("/home/cristian/Escritorio/TFM/pap_metaheuristics/previous_work/instances/10_18_2_social_0.in");
                 Instance instance = new Instance(i);
-                PriorityQueue<Pair> nodeDeg = new PriorityQueue<>();
+                PriorityQueue<PairDeg> nodeDeg = new PriorityQueue<>();
                 for(Map.Entry<Integer, ArrayList<Integer>> entry: instance.graph.entrySet()) {
-                    nodeDeg.add(new Pair(entry.getKey(), entry.getValue().size()));
+                    nodeDeg.add(new PairDeg(entry.getKey(), entry.getValue().size()));
                 }
                 int k = (int) Math.ceil(instance.getNumberNodes()/2);
                 int[] setToPick = new int[k];
@@ -159,6 +175,7 @@ public class Main {
                 Evaluation eval = new Evaluation(instance);
                 Solution sol = null;
                 HashSet<Integer> visited = new HashSet<>();
+                long initTime = System.nanoTime();
                 while(sol == null) {
                     int randomNumberOfNodes = (int) Math.ceil(Math.random()*k);
                     visited.add(randomNumberOfNodes);
@@ -175,21 +192,77 @@ public class Main {
                         break;
                     }
                 }
+                long endTime = System.nanoTime();
                 String pathRandomSols = "/home/cristian/Escritorio/TFM/pap_metaheuristics/solutions/random_solutions/";
                 PrintWriter writer = new PrintWriter(pathRandomSols + i.getName() + ".txt", "UTF-8");
                 if(sol == null) {
                     System.out.println("No se ha encontrado solución con este método para la instancia " + i.getName());
                     writer.println(i.getName().split("\\.")[0]);
-                    writer.println(0);
+                    // Si no encontramos solución, usamos la solución trivial: semilla con todos los nodos del grafo
+                    writer.println(instance.getNumberNodes());
+                    writer.println(endTime - initTime);
                     writer.close();
                 }
                 else{
                     System.out.println("Instancia " + i.getName() + " con valor de la FO " + sol.getSolution().size() + " y con solución " + sol.getSolution());
                     writer.println(i.getName().split("\\.")[0]);
                     writer.println(sol.getSolution().size());
+                    writer.println(endTime - initTime);
                     writer.close();
                 }
             }
+        }
+        // 3.5. Generador voraz (centralidad por grado) de soluciones
+        /*
+        Análogo al anterior, quitando la componente aleatoria. TODO a esto añadir algo más de información: la CL en el GRASP sería útil considerarla como dg(v)*0.5 - n_i(v)
+        es decir, el threshold del nodo menos el número de spreaders que tiene alrededor. Esto es más información que sería útil tener.
+        */
+        boolean greedySolution = true;
+        if(greedySolution) {
+            for(File i: dirInstances.listFiles()) {
+                //i = new File("/home/cristian/Escritorio/TFM/pap_metaheuristics/previous_work/instances/10_18_2_social_0.in");
+                Instance instance = new Instance(i);
+                Evaluation eval = new Evaluation(instance);
+                Solution sol = null;
+                long initTime = System.nanoTime();
+                ArrayList<Integer> posSol = new ArrayList<>();
+                HashSet<Integer> inSolution = new HashSet<>();
+                while(sol == null) {
+                    int selectedNode = -1;
+                    double bestValue = Integer.MIN_VALUE;
+                    for(Integer j: instance.graph.keySet()) {
+                        if(instance.nodeValue(j) > bestValue && !inSolution.contains(j)) {
+                            selectedNode = j;
+                            bestValue = instance.nodeValue(j);
+                        }
+                    }
+                    posSol.add(selectedNode);
+                    inSolution.add(selectedNode);
+                    if(eval.isSolution(new Solution(posSol))) {
+                        sol = new Solution(posSol);
+                        break;
+                    }
+                }
+                long endTime = System.nanoTime();
+                String pathRandomSols = "/home/cristian/Escritorio/TFM/pap_metaheuristics/solutions/greedy_solutions/";
+                PrintWriter writer = new PrintWriter(pathRandomSols + i.getName() + ".txt", "UTF-8");
+                if(sol == null) {
+                    System.out.println("No se ha encontrado solución con este método para la instancia " + i.getName());
+                    writer.println(i.getName().split("\\.")[0]);
+                    // Si no encontramos solución, usamos la solución trivial: semilla con todos los nodos del grafo
+                    writer.println(instance.getNumberNodes());
+                    writer.println(endTime - initTime);
+                    writer.close();
+                }
+                else{
+                    System.out.println("Instancia " + i.getName() + " con valor de la FO " + sol.getSolution().size() + " y con solución " + sol.getSolution());
+                    writer.println(i.getName().split("\\.")[0]);
+                    writer.println(sol.getSolution().size());
+                    writer.println(endTime - initTime);
+                    writer.close();
+                }
+            }
+
         }
         // 4. Generador aleatorio de soluciones (incremental)
         /*
@@ -207,6 +280,7 @@ public class Main {
                 ArrayList<Integer> posSol = new ArrayList<>();
                 Evaluation eval = new Evaluation(instance);
                 ArrayList<Integer> nodes = instance.getNodes();
+                long initTime = System.nanoTime();
                 while(sol == null) {
                     int randomIndex = Math.min((int) Math.ceil(Math.random()*nodes.size()), nodes.size() - 1);
                     int posNode = nodes.get(randomIndex);
@@ -217,18 +291,21 @@ public class Main {
                     Solution auxSol = new Solution(posSol);
                     if(eval.isSolution(auxSol)) sol = auxSol;
                 }
+                long endTime = System.nanoTime();
                 String pathRandomSols = "/home/cristian/Escritorio/TFM/pap_metaheuristics/solutions/inc_random_solutions/";
                 PrintWriter writer = new PrintWriter(pathRandomSols + i.getName() + ".txt", "UTF-8");
                 if(sol == null) {
                     System.out.println("No se ha encontrado solución con este método para la instancia " + i.getName());
                     writer.println(i.getName().split("\\.")[0]);
-                    writer.println(0);
+                    writer.println(instance.getNumberNodes());
+                    writer.println(endTime - initTime);
                     writer.close();
                 }
                 else{
                     System.out.println("Instancia " + i.getName() + " con valor de la FO " + sol.getSolution().size() + " y con solución " + sol.getSolution());
                     writer.println(i.getName().split("\\.")[0]);
                     writer.println(sol.getSolution().size());
+                    writer.println(endTime - initTime);
                     writer.close();
                 }
             }
@@ -239,7 +316,7 @@ public class Main {
         Vamos a desarrollador un generador aleatorio de soluciones. Este metodo cogerá todos los nodos de la instancia, e irá quitando nodos aleatorios hasta que dejemos
         de tener una posible solución
          */
-        boolean decrementalRandomSolution = true;
+        boolean decrementalRandomSolution = false;
         if(decrementalRandomSolution) {
             for (File i : dirInstances.listFiles()) {
                 //i = new File("/home/cristian/Escritorio/TFM/pap_metaheuristics/previous_work/instances/800_799_1_social_0.in");
@@ -248,6 +325,7 @@ public class Main {
                 Solution sol = null;
                 Evaluation eval = new Evaluation(instance);
                 ArrayList<Integer> posSol = instance.getNodes();
+                long initTime = System.nanoTime();
                 while(sol == null) {
                     int randomIndex = Math.min((int) Math.ceil(Math.random()*posSol.size()), posSol.size() - 1);
                     int posNode = posSol.get(randomIndex);
@@ -258,23 +336,129 @@ public class Main {
                         sol = auxSol;
                     }
                 }
+                long endTime = System.nanoTime();
                 String pathRandomSols = "/home/cristian/Escritorio/TFM/pap_metaheuristics/solutions/dec_random_solutions/";
                 PrintWriter writer = new PrintWriter(pathRandomSols + i.getName() + ".txt", "UTF-8");
                 if(sol == null) {
                     System.out.println("No se ha encontrado solución con este método para la instancia " + i.getName());
                     writer.println(i.getName().split("\\.")[0]);
-                    writer.println(0);
+                    writer.println(instance.getNumberNodes());
+                    writer.println(endTime - initTime);
                     writer.close();
                 }
                 else{
                     System.out.println("Instancia " + i.getName() + " con valor de la FO " + sol.getSolution().size() + " y con solución " + sol.getSolution());
                     writer.println(i.getName().split("\\.")[0]);
                     writer.println(sol.getSolution().size());
+                    writer.println(endTime - initTime);
                     writer.close();
                 }
             }
 
         }
 
+        // MÚLTIPLES ITERACIONES PARA LOS GENERADORES ALEATORIOS
+        /*
+        Con el fin de hacer pruebas consistentes, vamos a lanzar múltiples ejecuciones de los dos generadores aleatorios de soluciones y ver qué resultados podemos
+        alcanzar haciendo ejecuciones aleatorias
+        */
+
+        int nIterations = 100;
+        boolean incrementalMultipleRandomSolutions = false;
+        if(incrementalMultipleRandomSolutions) {
+            for (File i : dirInstances.listFiles()) {
+                //i = new File("/home/cristian/Escritorio/TFM/pap_metaheuristics/previous_work/instances/800_799_1_social_0.in");
+                // i = new File("/home/cristian/Escritorio/TFM/pap_metaheuristics/previous_work/instances/10_18_2_social_0.in");
+                Instance instance = new Instance(i);
+                Solution bestSolution = null;
+                long bestSolTime = 0;
+                for (int j = 0; j < nIterations; j++) {
+                    Solution sol = null;
+                    HashSet<Integer> visited = new HashSet<>();
+                    ArrayList<Integer> posSol = new ArrayList<>();
+                    Evaluation eval = new Evaluation(instance);
+                    ArrayList<Integer> nodes = instance.getNodes();
+                    long initTime = System.nanoTime();
+                    while (sol == null) {
+                        int randomIndex = Math.min((int) Math.ceil(Math.random() * nodes.size()), nodes.size() - 1);
+                        int posNode = nodes.get(randomIndex);
+                        if (!visited.contains(posNode)) {
+                            visited.add(posNode);
+                            posSol.add(posNode);
+                        }
+                        Solution auxSol = new Solution(posSol);
+                        if (eval.isSolution(auxSol)) sol = auxSol;
+                    }
+                    long endTime = System.nanoTime();
+                    if (bestSolution == null || sol.solutionValue() < bestSolution.solutionValue()) {
+                        bestSolution = sol;
+                        bestSolTime = endTime - initTime;
+                    }
+                }
+                String pathRandomSols = "/home/cristian/Escritorio/TFM/pap_metaheuristics/solutions/inc_random_solutions/";
+                PrintWriter writer = new PrintWriter(pathRandomSols + i.getName() + ".txt", "UTF-8");
+                if (bestSolution == null) {
+                    System.out.println("No se ha encontrado solución con este método para la instancia " + i.getName());
+                    writer.println(i.getName().split("\\.")[0]);
+                    writer.println(instance.getNumberNodes());
+                    writer.println(bestSolTime);
+                    writer.close();
+                } else {
+                    System.out.println("Instancia " + i.getName() + " con valor de la FO " + bestSolution.getSolution().size() + " y con solución " + bestSolution.getSolution());
+                    writer.println(i.getName().split("\\.")[0]);
+                    writer.println(bestSolution.getSolution().size());
+                    writer.println(bestSolTime);
+                    writer.close();
+                }
+            }
+        }
+        boolean decrementalMultipleRandomSolutions = false;
+        if(decrementalMultipleRandomSolutions) {
+            for (File i : dirInstances.listFiles()) {
+                //i = new File("/home/cristian/Escritorio/TFM/pap_metaheuristics/previous_work/instances/800_799_1_social_0.in");
+                // i = new File("/home/cristian/Escritorio/TFM/pap_metaheuristics/previous_work/instances/10_18_2_social_0.in");
+                Instance instance = new Instance(i);
+                Solution sol = null;
+                Evaluation eval = new Evaluation(instance);
+                ArrayList<Integer> posSol = instance.getNodes();
+                Solution bestSolution = null;
+                long bestSolTime = 0;
+                for (int j = 0; j < nIterations; j++) {
+                    long initTime = System.nanoTime();
+                    while (sol == null) {
+                        int randomIndex = Math.min((int) Math.ceil(Math.random() * posSol.size()), posSol.size() - 1);
+                        int posNode = posSol.get(randomIndex);
+                        posSol.remove(randomIndex);
+                        Solution auxSol = new Solution(posSol);
+                        if (!eval.isSolution(auxSol)) {
+                            auxSol.addNode(posNode);
+                            sol = auxSol;
+                        }
+                    }
+                    long endTime = System.nanoTime();
+                    if (bestSolution == null || sol.solutionValue() < bestSolution.solutionValue()) {
+                        bestSolution = sol;
+                        bestSolTime = endTime - initTime;
+                    }
+                }
+                String pathRandomSols = "/home/cristian/Escritorio/TFM/pap_metaheuristics/solutions/dec_random_solutions/";
+                PrintWriter writer = new PrintWriter(pathRandomSols + i.getName() + ".txt", "UTF-8");
+                if(sol == null) {
+                    System.out.println("No se ha encontrado solución con este método para la instancia " + i.getName());
+                    writer.println(i.getName().split("\\.")[0]);
+                    writer.println(instance.getNumberNodes());
+                    writer.println(bestSolTime);
+                    writer.close();
+                }
+                else{
+                    System.out.println("Instancia " + i.getName() + " con valor de la FO " + sol.getSolution().size() + " y con solución " + sol.getSolution());
+                    writer.println(i.getName().split("\\.")[0]);
+                    writer.println(sol.getSolution().size());
+                    writer.println(bestSolTime);
+                    writer.close();
+                }
+            }
+
+        }
     }
 }
