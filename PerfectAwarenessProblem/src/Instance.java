@@ -5,6 +5,7 @@ import java.io.File;
 import java.util.Scanner;
 
 public class Instance {
+    public String name;
     private int numberNodes;
     private int numberEdges;
     public HashMap<Integer, Integer> nSpreaders = new HashMap<>();
@@ -21,7 +22,7 @@ public class Instance {
             k = Integer.parseInt(reader.nextLine());
             numberNodes = Integer.parseInt(reader.nextLine());
             numberEdges = Integer.parseInt(reader.nextLine());
-
+            name = file.getName();
             for(int i = 0; i < numberEdges; i++) {
                 String[] sEdge = reader.nextLine().split(" ");
                 int[] edge = {Integer.parseInt(sEdge[0]), Integer.parseInt(sEdge[1])};
