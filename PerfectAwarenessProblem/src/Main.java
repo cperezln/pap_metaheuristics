@@ -70,6 +70,7 @@ public class Main {
 
     public static void main(String[] args) throws FileNotFoundException, UnsupportedEncodingException {
         String inPath = args[0];
+        System.out.println("Path para guardar los resultados " + inPath);
         boolean bruteForce = false;
         boolean randomSolutionByDegree = false;
         boolean greedySolution = false;
@@ -79,19 +80,49 @@ public class Main {
         boolean decrementalMultipleRandomSolutions = false;
         boolean lsIncrementalRandomSolution = false;
         boolean lsIncrementalMultipleRandomSolutions = false;
-        boolean lsGreedySolution = true;
+        boolean lsGreedySolution = false;
 
         switch (Integer.parseInt(args[1])) {
-            case 1:  bruteForce = true;
-            case 2: randomSolutionByDegree = true;
-            case 3: greedySolution = true;
-            case 4:  incrementalRandomSolution = true;
-            case 5: decrementalRandomSolution = true;
-            case 6: incrementalMultipleRandomSolutions = true;
-            case 7:  decrementalMultipleRandomSolutions = true;
-            case 8: lsIncrementalRandomSolution = true;
-            case 9: lsIncrementalMultipleRandomSolutions = true;
-            case 10: lsGreedySolution = true;
+            case 1:
+                bruteForce = true;
+                System.out.println("Se ha seleccionado la generación de soluciones por fuerza bruta");
+                break;
+            case 2:
+                randomSolutionByDegree = true;
+                System.out.println("Se ha seleccionado la generación de soluciones por generación aleatoria");
+                break;
+            case 3:
+                greedySolution = true;
+                System.out.println("Se ha seleccionado la generación de soluciones por aproximación voraz");
+                break;
+            case 4:
+                incrementalRandomSolution = true;
+                System.out.println("Se ha seleccionado la generación de soluciones por generación aleatoria incremental");
+                break;
+            case 5:
+                decrementalRandomSolution = true;
+                System.out.println("Se ha seleccionado la generación de soluciones por generación aleatoria decremental");
+                break;
+            case 6:
+                incrementalMultipleRandomSolutions = true;
+                System.out.println("Se ha seleccionado la generación de soluciones por generación múltiple aleatoria incremental");
+                break;
+            case 7:
+                decrementalMultipleRandomSolutions = true;
+                System.out.println("Se ha seleccionado la generación de soluciones por generación múltiple aleatoria decremental");
+                break;
+            case 8:
+                lsIncrementalRandomSolution = true;
+                System.out.println("Se ha seleccionado la generación de soluciones por generación aleatoria incremental con búsqueda local");
+                break;
+            case 9:
+                lsIncrementalMultipleRandomSolutions = true;
+                System.out.println("Se ha seleccionado la generación de soluciones por generación múltiple aleatoria incremental con búsqueda local");
+                break;
+            case 10:
+                lsGreedySolution = true;
+                System.out.println("Se ha seleccionado la generación de soluciones por aproximación voraz con búsqueda local");
+                break;
         }
         // Pruebas primera versión:
         String pathInstances = inPath + "/previous_work/instances";
@@ -461,7 +492,6 @@ public class Main {
                 }
             }
         }
-
         if(lsGreedySolution) {
             for(File i: dirInstances.listFiles()) {
                 // i = new File(inPath + "/previous_work/instances/700_59500_99_social_0.in");

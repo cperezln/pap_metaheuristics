@@ -10,6 +10,7 @@ public class LocalSearch {
         Queue<Solution> qSols = new LinkedList<>();
         // Método optimizable
         qSols.add(sol);
+        HashSet<Solution> visitedSolutions = new HashSet<>();
         Solution bestSol = sol;
         while(!qSols.isEmpty()) {
             Solution actSolution = qSols.poll();
@@ -23,7 +24,9 @@ public class LocalSearch {
                 Solution newPossibleSolution = new Solution(newArrSol);
                 if(e.isSolution(newPossibleSolution)) {
                     if(added < maxQueueSize) {
-                        qSols.add(newPossibleSolution);
+                        if(visitedSolutions.contains(newPossibleSolution)) {
+                            qSols.add(newPossibleSolution);
+                        }
                         added++;
                         if (newPossibleSolution.solutionValue() < bestSol.solutionValue()) {
                             bestSol = newPossibleSolution;

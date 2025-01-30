@@ -36,6 +36,11 @@ public class Solution {
         return s;
     }
 
+    @Override
+    public int hashCode() {
+        return this.toString().hashCode();
+    }
+
     public static Solution GenerateBruteForce(Instance instance, Evaluation eval) {
         int[] arr = IntStream.range(0, instance.getNumberNodes()).toArray();
         boolean foundSol = false;
@@ -137,8 +142,10 @@ public class Solution {
                     bestValue = instance.nodeValue(j);
                 }
             }
-            posSol.add(selectedNode);
-            inSolution.add(selectedNode);
+            if(selectedNode != -1) {
+                posSol.add(selectedNode);
+                inSolution.add(selectedNode);
+            }
             if(eval.isSolution(new Solution(posSol))) {
                 sol = new Solution(posSol);
                 break;
@@ -146,5 +153,4 @@ public class Solution {
         }
         return sol;
     }
-
 }

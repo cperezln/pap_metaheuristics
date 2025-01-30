@@ -3,6 +3,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Queue;
 
+
 public class Evaluation {
 
     private Instance instance;
@@ -15,38 +16,53 @@ public class Evaluation {
     // Si bien es cierto que haría falta simular el proceso de propagación, ¿sería necesario hacerlo con tantas estructuras de datos complejas? Creo que podríamos
     // sacar un algoritmo basado en estructuras más simples, de tal manera que la complejidad computacional se redujese
     public boolean isSolution(Solution sol) {
-        int tau = 0;
         // We don't need to know the round we become aware/spreaders. If so, we can compute it just adding a null every time we insert every new neighbor in the queue
-        Queue<Integer> qSpreaders = new LinkedList<>(sol.getSolution());
-        HashSet<Integer> spreadersTau = new HashSet<>();
-        HashSet<Integer> spreadersTaup = new HashSet<>(sol.getSolution());
-        HashSet<Integer> aware = new HashSet<>(sol.getSolution());
-        HashSet<Integer> visited = new HashSet<>();
-        while(spreadersTau != spreadersTaup && qSpreaders.size() > 0 && aware.size() != instance.getNumberNodes()) {
-            spreadersTau.addAll(spreadersTaup);
+        Queue<Integer> qSpreaders = new LinkedList<>();
+        boolean[] spreadersTau = new boolean[instance.getNumberNodes()];
+        boolean[] spreadersTaup = new boolean[instance.getNumberNodes()];
+        boolean[] aware = new boolean[instance.getNumberNodes()];
+        int awareSize = 0;
+        for(Integer i: sol.getSolution()) {
+            qSpreaders.add(i);
+            spreadersTaup[i] = true;
+            aware[i] = true;
+            awareSize++;
+        }
+        boolean[] visited = new boolean[instance.getNumberNodes()];
+        while(qSpreaders.size() > 0 && awareSize != instance.getNumberNodes()) {
+            for(int i = 0; i < spreadersTau.length; i++) {
+                spreadersTau[i] = spreadersTaup[i];
+            }
             int node = qSpreaders.poll();
-            if(!visited.contains(node)) {
-                visited.add(node);
-                for (Integer i : instance.graph.get(node)) {
+            if(!visited[node]) {
+                visited[node] = true;
+                for (Integer neigh : instance.graph.get(node)) {
                     // Become aware if your neigbor
-                    instance.nSpreaders.put(i, instance.nSpreaders.get(i) + 1);
-                    if(!aware.contains(i)) aware.add(i);
-                    if(!spreadersTaup.contains(i)) {
+                    instance.nSpreaders.put(neigh, instance.nSpreaders.get(neigh) + 1);
+                    if(!aware[neigh]) {
+                        aware[neigh] = true;
+                        awareSize++;
+                    }
+                    if(!spreadersTau[neigh]) {
                         int countSpreader = 0;
-                        for (Integer j : instance.graph.get(i)) {
-                            if (spreadersTau.contains(j)) countSpreader += 1;
+                        for (Integer j : instance.graph.get(neigh)) {
+                            if (spreadersTau[j]) countSpreader += 1;
                         }
                         // Become spreader if the number of spreader neighbors is greater than threshold (which is 0.5 * d(node))
-                        if (countSpreader >= instance.graph.get(i).size() * 0.5) {
-                            spreadersTaup.add(i);
-                            qSpreaders.add(i);
+                        if (countSpreader >= instance.graph.get(neigh).size() * 0.5) {
+                            spreadersTaup[neigh] = true;
+                            qSpreaders.add(neigh);
                         }
                     }
                 }
             }
         }
-        return aware.size() == instance.getNumberNodes();
+        return awareSize == instance.getNumberNodes();
     }
 
-
+    public static boolean checkEqualSets(boolean[] s, boolean[] sp) {
+        boolean equals = true;
+        for(int i = 0; i < s.length; i++) equals = equals && (s[i] == sp[i]);
+        return equals;
+    }
 }
