@@ -38,7 +38,7 @@ public class Evaluation {
                 visited[node] = true;
                 for (Integer neigh : instance.graph.get(node)) {
                     // Become aware if your neigbor
-                    instance.nSpreaders.put(neigh, instance.nSpreaders.get(neigh) + 1);
+                    // instance.nSpreaders.put(neigh, instance.nSpreaders.get(neigh) + 1);
                     if(!aware[neigh]) {
                         aware[neigh] = true;
                         awareSize++;

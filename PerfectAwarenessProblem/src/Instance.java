@@ -60,4 +60,6 @@ public class Instance {
     public double nodeValue(int n) {
         return 0.5*dCentrality.get(n) - nSpreaders.get(n);
     }
+
+    public int getCentrality(int n) { return dCentrality.get(n); }
 }

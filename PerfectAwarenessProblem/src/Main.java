@@ -1,12 +1,10 @@
-import java.awt.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.*;
-import java.util.stream.IntStream;
 
- class PairDeg implements Comparable<PairDeg>{
+class PairDeg implements Comparable<PairDeg>{
     int node;
     int deg;
     public PairDeg(int node, int deg){
@@ -122,6 +120,9 @@ public class Main {
             case 10:
                 lsGreedySolution = true;
                 System.out.println("Se ha seleccionado la generación de soluciones por aproximación voraz con búsqueda local");
+                break;
+            case 0:
+                System.out.println("No se ha seleccionado ningún generador de soluciones");
                 break;
         }
         // Pruebas primera versión:
@@ -432,7 +433,7 @@ public class Main {
                 long initTime = System.nanoTime();
                 Evaluation eval = new Evaluation(instance);
                 Solution sol = Solution.GenerateIncrementalRandomSolution(instance, eval);
-                LocalSearch ls = new LocalSearch(sol, eval, 3);
+                FilterUnnecesaryNodes ls = new FilterUnnecesaryNodes(sol, eval, 3);
                 Solution improvedSolution = ls.bestSolutionFound;
                 long endTime = System.nanoTime();
                 String pathRandomSols = inPath + "/solutions/ls_inc_random_solutions/";
@@ -472,7 +473,7 @@ public class Main {
                     }
                 }
                 long initLsTime = System.nanoTime();
-                LocalSearch ls = new LocalSearch(bestSolution, eval, 3);
+                FilterUnnecesaryNodes ls = new FilterUnnecesaryNodes(bestSolution, eval, 3);
                 Solution improvedSolution = ls.bestSolutionFound;
                 long endLsTime = System.nanoTime();
                 String pathRandomSols = inPath + "/solutions/ls_inc_random_solutions/";
@@ -492,20 +493,28 @@ public class Main {
                 }
             }
         }
+        lsGreedySolution = true;
         if(lsGreedySolution) {
             for(File i: dirInstances.listFiles()) {
                 // i = new File(inPath + "/previous_work/instances/700_59500_99_social_0.in");
                 System.out.println("Instancia " + i.getName());
                 Instance instance = new Instance(i);
+                Solution.instance = instance;
                 long initTime = System.nanoTime();
                 Evaluation eval = new Evaluation(instance);
                 Solution sol = Solution.GenerateDegreeGreedySolution(instance, eval);
-                LocalSearch ls = new LocalSearch(sol, eval, 3);
-                Solution improvedSolution = ls.bestSolutionFound;
+                System.out.println("Primera solución posible " + sol);
+                long lsInitTime = System.nanoTime();
+                LocalSearch ls = new LocalSearch(sol, eval);
+                System.out.println("LocalSearch tarda " + (System.nanoTime() - lsInitTime));
+                System.out.println("LocalSearch solución " + ls.bestSolutionFound);
+                FilterUnnecesaryNodes filter = new FilterUnnecesaryNodes(ls.bestSolutionFound, eval, 1 );
+                System.out.println("Solución después del filtro " + filter.bestSolutionFound);
+                Solution improvedSolution = filter.bestSolutionFound;
                 long endTime = System.nanoTime();
                 String pathRandomSols = inPath + "/solutions/ls_greedy_solutions/";
                 PrintWriter writer = new PrintWriter(pathRandomSols + i.getName() + ".txt", "UTF-8");
-                if(sol == null) {
+                if(false/*sol == null*/) {
                     System.out.println("No se ha encontrado solución con este método para la instancia " + i.getName());
                     writer.println(i.getName().split("\\.")[0]);
                     // Si no encontramos solución, usamos la solución trivial: semilla con todos los nodos del grafo
@@ -513,13 +522,13 @@ public class Main {
                     writer.println(endTime - initTime);
                     writer.close();
                 }
-                else{
+                /*else{
                     System.out.println("Instancia " + i.getName() + " con valor de la FO " + improvedSolution.getSolution().size() + " y con solución " + improvedSolution.getSolution());
                     writer.println(i.getName().split("\\.")[0]);
                     writer.println(improvedSolution.getSolution().size());
                     writer.println(endTime - initTime);
                     writer.close();
-                }
+                }*/
             }
         }
     }

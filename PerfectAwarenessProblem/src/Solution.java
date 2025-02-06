@@ -3,15 +3,28 @@ import java.util.stream.IntStream;
 
 public class Solution {
     // In this works, solutions are composed as a number of nodes
+    static Instance instance;
     private ArrayList<Integer> solution;
+    private boolean[] containSet;
+    private int cumCentrality = 0;
 
     public Solution(ArrayList<Integer> solution) {
         this.solution = solution;
+        this.containSet = new boolean[instance.getNumberNodes()];
+        for(int i: this.solution) {
+            this.containSet[i] = true;
+            this.cumCentrality += instance.getCentrality(i);
+        }
     }
 
     public Solution(int[] solution) {
         this.solution =  new ArrayList<>();
-        for(int i: solution) this.solution.add(i);
+        this.containSet = new boolean[solution.length];
+        for(int i: solution) {
+            this.solution.add(i);
+            this.containSet[i] = true;
+            this.cumCentrality += instance.getCentrality(i);
+        }
     }
 
     public boolean checkValidityOfSolution(Instance instance){
@@ -22,9 +35,21 @@ public class Solution {
         return solution;
     }
 
+    public int getCumCentrality() {
+        return cumCentrality;
+    }
+
     public int solutionValue() { return solution.size(); }
 
     public void addNode(int node) { this.solution.add(node); }
+
+    public boolean isIn(int node) { return this.containSet[node]; }
+
+    public Queue<Integer> nodesNotInSolution() {
+        Queue<Integer> queue = new LinkedList<>();
+        for(int j: instance.getNodes()) if(!this.isIn(j)) queue.add(j);
+        return queue;
+    }
 
     @Override
     public String toString() {
@@ -146,8 +171,9 @@ public class Solution {
                 posSol.add(selectedNode);
                 inSolution.add(selectedNode);
             }
-            if(eval.isSolution(new Solution(posSol))) {
-                sol = new Solution(posSol);
+            Solution newSol = new Solution(posSol);
+            if(eval.isSolution(newSol)) {
+                sol = newSol;
                 break;
             }
         }
