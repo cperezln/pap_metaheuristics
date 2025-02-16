@@ -430,10 +430,11 @@ public class Main {
                 //i = new File(inPath + "/previous_work/instances/800_799_1_social_0.in");
                 // i = new File(inPath + "/previous_work/instances/10_18_2_social_0.in");
                 Instance instance = new Instance(i);
+                Solution.instance = instance;
                 long initTime = System.nanoTime();
                 Evaluation eval = new Evaluation(instance);
                 Solution sol = Solution.GenerateIncrementalRandomSolution(instance, eval);
-                FilterUnnecesaryNodes ls = new FilterUnnecesaryNodes(sol, eval, 3);
+                LocalSearch ls = new LocalSearch(sol, eval, false);
                 Solution improvedSolution = ls.bestSolutionFound;
                 long endTime = System.nanoTime();
                 String pathRandomSols = inPath + "/solutions/ls_inc_random_solutions/";
@@ -457,9 +458,8 @@ public class Main {
         nIterations = 100;
         if(lsIncrementalMultipleRandomSolutions) {
             for (File i : dirInstances.listFiles()) {
-                //i = new File(inPath + "/previous_work/instances/800_799_1_social_0.in");
-                // i = new File(inPath + "/previous_work/instances/10_18_2_social_0.in");
                 Instance instance = new Instance(i);
+                Solution.instance = instance;
                 Evaluation eval = new Evaluation(instance);
                 Solution bestSolution = null;
                 long bestSolTime = 0;
@@ -473,7 +473,7 @@ public class Main {
                     }
                 }
                 long initLsTime = System.nanoTime();
-                FilterUnnecesaryNodes ls = new FilterUnnecesaryNodes(bestSolution, eval, 3);
+                LocalSearch ls = new LocalSearch(bestSolution, eval, false);
                 Solution improvedSolution = ls.bestSolutionFound;
                 long endLsTime = System.nanoTime();
                 String pathRandomSols = inPath + "/solutions/ls_inc_random_solutions/";
@@ -493,28 +493,19 @@ public class Main {
                 }
             }
         }
-        lsGreedySolution = true;
         if(lsGreedySolution) {
             for(File i: dirInstances.listFiles()) {
-                // i = new File(inPath + "/previous_work/instances/700_59500_99_social_0.in");
-                System.out.println("Instancia " + i.getName());
                 Instance instance = new Instance(i);
                 Solution.instance = instance;
                 long initTime = System.nanoTime();
                 Evaluation eval = new Evaluation(instance);
                 Solution sol = Solution.GenerateDegreeGreedySolution(instance, eval);
-                System.out.println("Primera solución posible " + sol);
-                long lsInitTime = System.nanoTime();
-                LocalSearch ls = new LocalSearch(sol, eval);
-                System.out.println("LocalSearch tarda " + (System.nanoTime() - lsInitTime));
-                System.out.println("LocalSearch solución " + ls.bestSolutionFound);
-                FilterUnnecesaryNodes filter = new FilterUnnecesaryNodes(ls.bestSolutionFound, eval, 1 );
-                System.out.println("Solución después del filtro " + filter.bestSolutionFound);
-                Solution improvedSolution = filter.bestSolutionFound;
+                LocalSearch ls = new LocalSearch(sol, eval, false);
+                Solution improvedSolution = ls.bestSolutionFound;
                 long endTime = System.nanoTime();
                 String pathRandomSols = inPath + "/solutions/ls_greedy_solutions/";
                 PrintWriter writer = new PrintWriter(pathRandomSols + i.getName() + ".txt", "UTF-8");
-                if(false/*sol == null*/) {
+                if(sol == null) {
                     System.out.println("No se ha encontrado solución con este método para la instancia " + i.getName());
                     writer.println(i.getName().split("\\.")[0]);
                     // Si no encontramos solución, usamos la solución trivial: semilla con todos los nodos del grafo
@@ -522,13 +513,13 @@ public class Main {
                     writer.println(endTime - initTime);
                     writer.close();
                 }
-                /*else{
+                else{
                     System.out.println("Instancia " + i.getName() + " con valor de la FO " + improvedSolution.getSolution().size() + " y con solución " + improvedSolution.getSolution());
                     writer.println(i.getName().split("\\.")[0]);
                     writer.println(improvedSolution.getSolution().size());
                     writer.println(endTime - initTime);
                     writer.close();
-                }*/
+                }
             }
         }
     }

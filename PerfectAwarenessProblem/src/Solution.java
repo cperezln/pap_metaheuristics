@@ -45,10 +45,10 @@ public class Solution {
 
     public boolean isIn(int node) { return this.containSet[node]; }
 
-    public Queue<Integer> nodesNotInSolution() {
-        Queue<Integer> queue = new LinkedList<>();
-        for(int j: instance.getNodes()) if(!this.isIn(j)) queue.add(j);
-        return queue;
+    public LinkedList<Integer> nodesNotInSolution() {
+        LinkedList<Integer> ll = new LinkedList<>();
+        for(int j: instance.getNodes()) if(!this.isIn(j)) ll.add(j);
+        return ll;
     }
 
     @Override
