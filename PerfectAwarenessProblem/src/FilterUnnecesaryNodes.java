@@ -1,7 +1,4 @@
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.*;
 
 public class FilterUnnecesaryNodes {
     Solution bestSolutionFound;
@@ -9,7 +6,7 @@ public class FilterUnnecesaryNodes {
         Queue<Solution> qSols = new LinkedList<>();
         // Método optimizable
         qSols.add(sol);
-        HashSet<Solution> visitedSolutions = new HashSet<>();
+        HashMap<String, Boolean> visitedSolutions = new HashMap<>();
         Solution bestSol = sol;
         while(!qSols.isEmpty()) {
             Solution actSolution = qSols.poll();
@@ -24,9 +21,9 @@ public class FilterUnnecesaryNodes {
                 Solution newPossibleSolution = new Solution(newArrSol);
                 if(e.isSolution(newPossibleSolution)) {
                     if(added < maxQueueSize) {
-                        if(!visitedSolutions.contains(newPossibleSolution)) {
+                        if(!visitedSolutions.getOrDefault(newPossibleSolution.toString(), false)) {
                             qSols.add(newPossibleSolution);
-                            visitedSolutions.add(newPossibleSolution);
+                            visitedSolutions.put(newPossibleSolution.toString(), true);
                             added++;
                             if (newPossibleSolution.solutionValue() < bestSol.solutionValue()) {
                                 bestSol = newPossibleSolution;

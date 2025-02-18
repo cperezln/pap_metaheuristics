@@ -170,6 +170,11 @@ public class Solution {
             if(selectedNode != -1) {
                 posSol.add(selectedNode);
                 inSolution.add(selectedNode);
+                for(Integer spreader: posSol) {
+                    for(Integer neigh: instance.graph.get(spreader)) {
+                        instance.nSpreaders.put(neigh, instance.nSpreaders.get(neigh) + 1);
+                    }
+                }
             }
             Solution newSol = new Solution(posSol);
             if(eval.isSolution(newSol)) {

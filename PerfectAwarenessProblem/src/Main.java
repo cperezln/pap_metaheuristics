@@ -533,6 +533,7 @@ public class Main {
             for(File i: dirInstances.listFiles()) {
                 Instance instance = new Instance(i);
                 Solution.instance = instance;
+                System.out.println(i.getName());
                 long initTime = System.nanoTime();
                 Evaluation eval = new Evaluation(instance);
                 Solution sol = Solution.GenerateDegreeGreedySolution(instance, eval);
