@@ -8,8 +8,8 @@ public class FilterUnnecesaryNodes {
     public FilterUnnecesaryNodes(Solution sol, Evaluation e) {
         Queue<Solution> qSols = new LinkedList<>();
         // Método optimizable
+        HashSet<Integer> visitedSolutions = new HashSet<>();
         qSols.add(sol);
-        HashSet<Solution> visitedSolutions = new HashSet<>();
         Solution bestSol = sol;
         while(!qSols.isEmpty()) {
             Solution actSolution = qSols.poll();
@@ -24,8 +24,8 @@ public class FilterUnnecesaryNodes {
                 Solution newPossibleSolution = new Solution(newArrSol);
                 if(e.isSolution(newPossibleSolution)) {
                     if(added < maxQueueSize) {
-                        if (!visitedSolutions.contains(newPossibleSolution)) {
-                            visitedSolutions.add(newPossibleSolution);
+                        if (!visitedSolutions.contains(newPossibleSolution.bitwiseRepresentation())) {
+                            visitedSolutions.add(newPossibleSolution.bitwiseRepresentation());
                             qSols.add(newPossibleSolution);
                             added++;
                             if (newPossibleSolution.solutionValue() < bestSol.solutionValue()) {

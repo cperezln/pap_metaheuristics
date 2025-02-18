@@ -66,6 +66,13 @@ public class Solution {
         return this.toString().hashCode();
     }
 
+    public int bitwiseRepresentation() {
+        int bw = Integer.parseInt("0".repeat(instance.getNumberNodes()), 2);
+        for(Integer n: solution) {
+            bw = bw ^ (1 << n);
+        }
+        return bw;
+    }
     public static Solution GenerateBruteForce(Instance instance, Evaluation eval) {
         int[] arr = IntStream.range(0, instance.getNumberNodes()).toArray();
         boolean foundSol = false;

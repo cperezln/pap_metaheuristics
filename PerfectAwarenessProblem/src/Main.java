@@ -530,7 +530,7 @@ public class Main {
 
         if(refineGreedySolution) {
             for(File i: dirInstances.listFiles()) {
-                i = new File(inPath + "/previous_work/instances/65_133_2_social_0.in");
+                // i = new File(inPath + "/previous_work/instances/65_133_2_social_0.in");
                 Instance instance = new Instance(i);
                 System.out.println(i.getName());
                 Solution.instance = instance;
