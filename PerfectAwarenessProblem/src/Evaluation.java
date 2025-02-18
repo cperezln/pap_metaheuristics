@@ -21,6 +21,9 @@ public class Evaluation {
         boolean[] spreadersTau = new boolean[instance.getNumberNodes()];
         boolean[] spreadersTaup = new boolean[instance.getNumberNodes()];
         boolean[] aware = new boolean[instance.getNumberNodes()];
+        int[] spreaderCount = new int[instance.getNumberNodes()];  // Para llevar la cuenta de vecinos propagadores
+
+
         int awareSize = 0;
         for(Integer i: sol.getSolution()) {
             qSpreaders.add(i);
@@ -30,20 +33,26 @@ public class Evaluation {
         }
         boolean[] visited = new boolean[instance.getNumberNodes()];
         while(qSpreaders.size() > 0 && awareSize != instance.getNumberNodes()) {
-            for(int i = 0; i < spreadersTau.length; i++) {
+            /*for(int i = 0; i < spreadersTau.length; i++) {
                 spreadersTau[i] = spreadersTaup[i];
-            }
+            }*/
+            spreadersTau = spreadersTaup;
             int node = qSpreaders.poll();
             if(!visited[node]) {
                 visited[node] = true;
                 for (Integer neigh : instance.graph.get(node)) {
                     // Become aware if your neigbor
-                    // instance.nSpreaders.put(neigh, instance.nSpreaders.get(neigh) + 1);
                     if(!aware[neigh]) {
                         aware[neigh] = true;
                         awareSize++;
                     }
-                    if(!spreadersTau[neigh]) {
+                    // The number of spreaders around neigh increments, as node is a spreader
+                    spreaderCount[neigh]++;
+                    if (!spreadersTau[neigh] && spreaderCount[neigh] >= instance.graph.get(neigh).size() * 0.5) {
+                        spreadersTaup[neigh] = true;
+                        qSpreaders.add(neigh);
+                    }
+                    /*if(!spreadersTau[neigh]) {
                         int countSpreader = 0;
                         for (Integer j : instance.graph.get(neigh)) {
                             if (spreadersTau[j]) countSpreader += 1;
@@ -53,7 +62,7 @@ public class Evaluation {
                             spreadersTaup[neigh] = true;
                             qSpreaders.add(neigh);
                         }
-                    }
+                    }*/
                 }
             }
         }

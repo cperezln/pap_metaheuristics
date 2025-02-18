@@ -495,15 +495,16 @@ public class Main {
         }
         if(lsGreedySolution) {
             for(File i: dirInstances.listFiles()) {
+                i = new File(inPath + "/previous_work/instances/10_18_2_social_0.in");
                 Instance instance = new Instance(i);
                 Solution.instance = instance;
                 long initTime = System.nanoTime();
                 Evaluation eval = new Evaluation(instance);
                 Solution sol = Solution.GenerateDegreeGreedySolution(instance, eval);
-                LocalSearch ls = new LocalSearch(sol, eval, false);
-                Solution improvedSolution = ls.bestSolutionFound;
+                LocalSearch ls = new LocalSearch(sol, eval, true);
+                Solution improvedSolution = new FilterUnnecesaryNodes(ls.bestSolutionFound, eval).bestSolutionFound;
                 long endTime = System.nanoTime();
-                String pathRandomSols = inPath + "/solutions/ls_greedy_solutions/";
+                String pathRandomSols = inPath + "/solutions/ls_greedy_solutions_ls+refined/";
                 PrintWriter writer = new PrintWriter(pathRandomSols + i.getName() + ".txt", "UTF-8");
                 if(sol == null) {
                     System.out.println("No se ha encontrado solución con este método para la instancia " + i.getName());

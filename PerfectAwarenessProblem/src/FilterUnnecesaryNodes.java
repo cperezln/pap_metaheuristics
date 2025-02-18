@@ -5,8 +5,7 @@ import java.util.Queue;
 
 public class FilterUnnecesaryNodes {
     Solution bestSolutionFound;
-    public FilterUnnecesaryNodes(Solution sol, Evaluation e, int testFactor) {
-        int maxQueueSize = sol.solutionValue() / testFactor;
+    public FilterUnnecesaryNodes(Solution sol, Evaluation e) {
         Queue<Solution> qSols = new LinkedList<>();
         // Método optimizable
         qSols.add(sol);
@@ -14,6 +13,7 @@ public class FilterUnnecesaryNodes {
         Solution bestSol = sol;
         while(!qSols.isEmpty()) {
             Solution actSolution = qSols.poll();
+            int maxQueueSize = Math.min(actSolution.solutionValue(), (int) Math.ceil(actSolution.solutionValue() / Math.log(actSolution.solutionValue())));
             int added = 0;
             ArrayList actArrSol = actSolution.getSolution();
             for(int i = 0; i < actArrSol.size(); i++) {

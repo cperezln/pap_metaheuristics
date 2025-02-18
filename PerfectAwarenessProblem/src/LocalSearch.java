@@ -34,10 +34,10 @@ public class LocalSearch {
                 for (int i = 0; i < solutionStructure.size(); i++) {
                     for (int j = i + 1; j < solutionStructure.size(); j++) {
                         Solution neighbor = exchange(solution, new int[]{solutionStructure.get(i), solutionStructure.get(j)}, node);
+                        // Podría ser interesante quitar este isSolution y centrarlo todo en la parte de filtrado
                         if(e.isSolution(neighbor)) {
-                            Solution refinedNeighbor = new FilterUnnecesaryNodes(neighbor, e, 2).bestSolutionFound;
-                            if(refinedNeighbor.solutionValue() < this.bestSolutionFound.solutionValue()) {
-                                this.bestSolutionFound = refinedNeighbor;
+                            if(neighbor.solutionValue() < this.bestSolutionFound.solutionValue()) {
+                                this.bestSolutionFound = neighbor;
                                 improved = true;
                             }
                             else if(evaluateSecondOF && neighbor.solutionValue() == this.bestSolutionFound.solutionValue() && neighbor.getCumCentrality() < this.bestSolutionFound.getCumCentrality()) {
