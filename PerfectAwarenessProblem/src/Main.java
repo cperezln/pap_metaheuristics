@@ -252,6 +252,7 @@ public class Main {
                 Instance instance = new Instance(i);
                 long initTime = System.nanoTime();
                 Evaluation eval = new Evaluation(instance);
+                Solution.instance = instance;
                 Solution sol = Solution.GenerateDegreeGreedySolution(instance, eval);
                 long endTime = System.nanoTime();
                 String pathRandomSols = inPath + "/solutions/greedy_solutions/";
