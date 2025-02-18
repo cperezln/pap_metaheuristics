@@ -18,8 +18,10 @@ public class Evaluation {
     public boolean isSolution(Solution sol) {
         // We don't need to know the round we become aware/spreaders. If so, we can compute it just adding a null every time we insert every new neighbor in the queue
         Queue<Integer> qSpreaders = new LinkedList<>();
-        boolean[] spreadersTau = new boolean[instance.getNumberNodes()];
-        boolean[] spreadersTaup = new boolean[instance.getNumberNodes()];
+        //boolean[] spreadersTau = new boolean[instance.getNumberNodes()];
+        //boolean[] spreadersTaup = new boolean[instance.getNumberNodes()];
+        int spreadersTaubw = Integer.parseInt("0".repeat(instance.getNumberNodes()), 2);
+        int spreadersTaupbw = Integer.parseInt("0".repeat(instance.getNumberNodes()), 2);
         boolean[] aware = new boolean[instance.getNumberNodes()];
         int[] spreaderCount = new int[instance.getNumberNodes()];  // Para llevar la cuenta de vecinos propagadores
 
@@ -27,7 +29,7 @@ public class Evaluation {
         int awareSize = 0;
         for(Integer i: sol.getSolution()) {
             qSpreaders.add(i);
-            spreadersTaup[i] = true;
+            spreadersTaupbw = spreadersTaupbw ^ (1 << i);
             aware[i] = true;
             awareSize++;
         }
@@ -36,7 +38,7 @@ public class Evaluation {
             /*for(int i = 0; i < spreadersTau.length; i++) {
                 spreadersTau[i] = spreadersTaup[i];
             }*/
-            spreadersTau = spreadersTaup;
+            spreadersTaubw += (spreadersTaupbw ^ spreadersTaubw);
             int node = qSpreaders.poll();
             if(!visited[node]) {
                 visited[node] = true;
@@ -48,8 +50,9 @@ public class Evaluation {
                     }
                     // The number of spreaders around neigh increments, as node is a spreader
                     spreaderCount[neigh]++;
-                    if (!spreadersTau[neigh] && spreaderCount[neigh] >= instance.graph.get(neigh).size() * 0.5) {
-                        spreadersTaup[neigh] = true;
+                    boolean isSet = (spreadersTaubw & (1 << neigh)) != 0;
+                    if (!isSet && spreaderCount[neigh] >= instance.graph.get(neigh).size() * 0.5) {
+                        spreadersTaupbw = spreadersTaupbw ^ (1 << neigh);
                         qSpreaders.add(neigh);
                     }
                     /*if(!spreadersTau[neigh]) {

@@ -24,12 +24,13 @@ public class FilterUnnecesaryNodes {
                 Solution newPossibleSolution = new Solution(newArrSol);
                 if(e.isSolution(newPossibleSolution)) {
                     if(added < maxQueueSize) {
-                        if(visitedSolutions.contains(newPossibleSolution)) {
+                        if (!visitedSolutions.contains(newPossibleSolution)) {
+                            visitedSolutions.add(newPossibleSolution);
                             qSols.add(newPossibleSolution);
-                        }
-                        added++;
-                        if (newPossibleSolution.solutionValue() < bestSol.solutionValue()) {
-                            bestSol = newPossibleSolution;
+                            added++;
+                            if (newPossibleSolution.solutionValue() < bestSol.solutionValue()) {
+                                bestSol = newPossibleSolution;
+                            }
                         }
                     }
                     else break;
