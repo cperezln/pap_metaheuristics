@@ -1,3 +1,4 @@
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -17,55 +18,35 @@ public class Evaluation {
     // sacar un algoritmo basado en estructuras más simples, de tal manera que la complejidad computacional se redujese
     public boolean isSolution(Solution sol) {
         // We don't need to know the round we become aware/spreaders. If so, we can compute it just adding a null every time we insert every new neighbor in the queue
-        Queue<Integer> qSpreaders = new LinkedList<>();
         //boolean[] spreadersTau = new boolean[instance.getNumberNodes()];
         //boolean[] spreadersTaup = new boolean[instance.getNumberNodes()];
-        int spreadersTaubw = Integer.parseInt("0".repeat(instance.getNumberNodes()), 2);
-        int spreadersTaupbw = Integer.parseInt("0".repeat(instance.getNumberNodes()), 2);
-        boolean[] aware = new boolean[instance.getNumberNodes()];
+        BigInteger spreadersTaupbw = new BigInteger("0".repeat(instance.getNumberNodes()), 2);
         int[] spreaderCount = new int[instance.getNumberNodes()];  // Para llevar la cuenta de vecinos propagadores
-
-
-        int awareSize = 0;
-        for(Integer i: sol.getSolution()) {
-            qSpreaders.add(i);
-            spreadersTaupbw = spreadersTaupbw ^ (1 << i);
-            aware[i] = true;
-            awareSize++;
-        }
+        BigInteger spreadersTaubw = sol.getBitwiseRepresentation();
+        BigInteger qSpreaders = sol.getBitwiseRepresentation();
+        int awareSize = sol.solutionValue();
+        BigInteger aware = sol.getBitwiseRepresentation();
         boolean[] visited = new boolean[instance.getNumberNodes()];
-        while(qSpreaders.size() > 0 && awareSize != instance.getNumberNodes()) {
-            /*for(int i = 0; i < spreadersTau.length; i++) {
-                spreadersTau[i] = spreadersTaup[i];
-            }*/
-            spreadersTaubw += (spreadersTaupbw ^ spreadersTaubw);
-            int node = qSpreaders.poll();
+        int oldNeigh = 0;
+        while(!qSpreaders.equals(BigInteger.ZERO) && awareSize != instance.getNumberNodes()) {
+            spreadersTaubw = spreadersTaupbw;
+            int node = qSpreaders.getLowestSetBit();
+            BigInteger qSpreadersAux = qSpreaders;
+            qSpreaders = qSpreaders.clearBit(node);
             if(!visited[node]) {
                 visited[node] = true;
                 for (Integer neigh : instance.graph.get(node)) {
                     // Become aware if your neigbor
-                    if(!aware[neigh]) {
-                        aware[neigh] = true;
+                    if(!aware.testBit(neigh)) {
+                        aware = aware.setBit(neigh);
                         awareSize++;
                     }
                     // The number of spreaders around neigh increments, as node is a spreader
                     spreaderCount[neigh]++;
-                    boolean isSet = (spreadersTaubw & (1 << neigh)) != 0;
-                    if (!isSet && spreaderCount[neigh] >= instance.graph.get(neigh).size() * 0.5) {
-                        spreadersTaupbw = spreadersTaupbw ^ (1 << neigh);
-                        qSpreaders.add(neigh);
+                    if (!spreadersTaubw.testBit(neigh) && spreaderCount[neigh] >= instance.graph.get(neigh).size() * 0.5) {
+                        spreadersTaupbw = spreadersTaupbw.xor(BigInteger.ONE.shiftLeft(neigh));
+                        qSpreaders = qSpreaders.setBit(neigh);
                     }
-                    /*if(!spreadersTau[neigh]) {
-                        int countSpreader = 0;
-                        for (Integer j : instance.graph.get(neigh)) {
-                            if (spreadersTau[j]) countSpreader += 1;
-                        }
-                        // Become spreader if the number of spreader neighbors is greater than threshold (which is 0.5 * d(node))
-                        if (countSpreader >= instance.graph.get(neigh).size() * 0.5) {
-                            spreadersTaup[neigh] = true;
-                            qSpreaders.add(neigh);
-                        }
-                    }*/
                 }
             }
         }

@@ -13,10 +13,11 @@ public class FilterUnnecesaryNodes {
         HashSet<BigInteger> visitedSolutions = new HashSet<>();
         qSols.add(sol);
         Solution bestSol = sol;
+        int added = 0;
         while(!qSols.isEmpty()) {
             Solution actSolution = qSols.poll();
-            int maxQueueSize = Math.min(actSolution.solutionValue(), (int) Math.ceil(actSolution.solutionValue() / Math.log(actSolution.solutionValue())));
-            int added = 0;
+            added = Math.max(0, added - 1);
+            int maxQueueSize = Math.min(actSolution.solutionValue(), (int) Math.ceil(actSolution.solutionValue() / (5*Math.log(actSolution.solutionValue()))));
             ArrayList<Integer> actArrSol = actSolution.getSolution();
             for(int i = 0; i < actArrSol.size(); i++) {
                 BigInteger bwActSol = actSolution.getBitwiseRepresentation();

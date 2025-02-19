@@ -506,8 +506,13 @@ public class Main {
                 long initTime = System.nanoTime();
                 Evaluation eval = new Evaluation(instance);
                 Solution sol = Solution.GenerateDegreeGreedySolution(instance, eval);
-                System.out.println("First solution found: " + sol);
+                System.out.println("First solution found: " + sol.solutionValue());
+                sol = Solution.removeUnnedeed(sol);
+                System.out.println("Solution after unneeded: " + sol.solutionValue());
+                sol = new FilterUnnecesaryNodes(sol, eval).bestSolutionFound;
+                System.out.println("Solution after redundant: " + sol.solutionValue());
                 LocalSearch ls = new LocalSearch(sol, eval, false);
+                System.out.println("Solution after LS: " + ls.bestSolutionFound.solutionValue());
                 // Solution improvedSolution = new FilterUnnecesaryNodes(ls.bestSolutionFound, eval).bestSolutionFound;
                 Solution improvedSolution = ls.bestSolutionFound;
                 long endTime = System.nanoTime();
@@ -533,13 +538,14 @@ public class Main {
 
         if(refineGreedySolution) {
             for(File i: dirInstances.listFiles()) {
-                // i = new File(inPath + "/previous_work/instances/85_1272_19_social_0.in");
+                // i = new File(inPath + "/previous_work/instances/65_64_1_social_0.in");
                 Instance instance = new Instance(i);
                 System.out.println(i.getName());
                 Solution.instance = instance;
                 long initTime = System.nanoTime();
                 Evaluation eval = new Evaluation(instance);
                 Solution sol = Solution.GenerateDegreeGreedySolution(instance, eval);
+                sol = Solution.removeUnnedeed(sol);
                 Solution improvedSolution = new FilterUnnecesaryNodes(sol, eval).bestSolutionFound;
                 long endTime = System.nanoTime();
                 String pathRandomSols = inPath + "/solutions/refine_greedy_solutions_bw/";

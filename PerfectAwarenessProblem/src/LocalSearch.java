@@ -43,9 +43,6 @@ public class LocalSearch {
                             if (neighbor.solutionValue() < this.bestSolutionFound.solutionValue()) {
                                 this.bestSolutionFound = neighbor;
                                 improved = true;
-                            } else if (evaluateSecondOF && /*neighbor.solutionValue() == this.bestSolutionFound.solutionValue() &&*/ neighbor.getCumCentrality() < this.bestSolutionFound.getCumCentrality()) {
-                                this.bestSolutionFound = neighbor;
-                                improved = true;
                             }
                         }
                     }
