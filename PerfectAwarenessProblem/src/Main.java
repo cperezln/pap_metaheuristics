@@ -505,8 +505,9 @@ public class Main {
                 long initTime = System.nanoTime();
                 Evaluation eval = new Evaluation(instance);
                 Solution sol = Solution.GenerateDegreeGreedySolution(instance, eval);
-                LocalSearch ls = new LocalSearch(sol, eval, true);
-                Solution improvedSolution = new FilterUnnecesaryNodes(ls.bestSolutionFound, eval).bestSolutionFound;
+                LocalSearch ls = new LocalSearch(sol, eval, false);
+                // Solution improvedSolution = new FilterUnnecesaryNodes(ls.bestSolutionFound, eval).bestSolutionFound;
+                Solution improvedSolution = ls.bestSolutionFound;
                 long endTime = System.nanoTime();
                 String pathRandomSols = inPath + "/solutions/ls_greedy_solutions_bw/";
                 PrintWriter writer = new PrintWriter(pathRandomSols + i.getName() + ".txt", "UTF-8");

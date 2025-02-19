@@ -1,3 +1,4 @@
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -6,9 +7,10 @@ import java.util.Queue;
 public class FilterUnnecesaryNodes {
     Solution bestSolutionFound;
     public FilterUnnecesaryNodes(Solution sol, Evaluation e) {
+        bestSolutionFound = sol;
         Queue<Solution> qSols = new LinkedList<>();
         // Método optimizable
-        HashSet<Integer> visitedSolutions = new HashSet<>();
+        HashSet<BigInteger> visitedSolutions = new HashSet<>();
         qSols.add(sol);
         Solution bestSol = sol;
         while(!qSols.isEmpty()) {
@@ -18,6 +20,7 @@ public class FilterUnnecesaryNodes {
             ArrayList actArrSol = actSolution.getSolution();
             for(int i = 0; i < actArrSol.size(); i++) {
                 ArrayList<Integer> newArrSol = new ArrayList<>();
+                // TODO cambiar por operación bitwise
                 for(int j = 0; j < actArrSol.size(); j++) {
                     if(i != j) newArrSol.add((Integer) actArrSol.get(j));
                 }

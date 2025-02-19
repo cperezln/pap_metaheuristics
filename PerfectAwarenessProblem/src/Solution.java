@@ -1,3 +1,4 @@
+import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.IntStream;
 
@@ -66,10 +67,10 @@ public class Solution {
         return this.toString().hashCode();
     }
 
-    public int bitwiseRepresentation() {
-        int bw = Integer.parseInt("0".repeat(instance.getNumberNodes()), 2);
+    public BigInteger bitwiseRepresentation() {
+        BigInteger bw = new BigInteger("0".repeat(instance.getNumberNodes()), 2);
         for(Integer n: solution) {
-            bw = bw ^ (1 << n);
+            bw = bw.xor(BigInteger.ONE.shiftLeft(n));
         }
         return bw;
     }
@@ -191,5 +192,13 @@ public class Solution {
             }
         }
         return sol;
+    }
+
+    public static Solution SolutionFromBitwiseRepresentation(BigInteger bw) {
+        ArrayList<Integer> posSol = new ArrayList<>();
+        for(int i = 0; i < instance.getNumberNodes(); i ++){
+            if(!(bw.and(BigInteger.ONE.shiftLeft(i))).equals(BigInteger.ZERO)) posSol.add(i);
+        }
+        return new Solution(posSol);
     }
 }
