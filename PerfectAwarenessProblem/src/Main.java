@@ -506,7 +506,13 @@ public class Main {
                 long initTime = System.nanoTime();
                 Evaluation eval = new Evaluation(instance);
                 Solution sol = Solution.GenerateDegreeGreedySolution(instance, eval);
+                System.out.println("Solución original " + sol);
+                sol = Solution.removeUnnedeed(sol);
+                System.out.println("Solución sin redundantes " + sol);
+                sol = new FilterUnnecesaryNodes(sol, eval).bestSolutionFound;
+                System.out.println("Solución sin redundantes en la propagación " + sol);
                 LocalSearch ls = new LocalSearch(sol, eval, true);
+                System.out.println("Solución después de la búsqueda local " + ls.bestSolutionFound);
                 Solution improvedSolution = new FilterUnnecesaryNodes(ls.bestSolutionFound, eval).bestSolutionFound;
                 long endTime = System.nanoTime();
                 String pathRandomSols = inPath + "/solutions/ls_greedy_solutions_ls+refined/";
@@ -537,7 +543,12 @@ public class Main {
                 long initTime = System.nanoTime();
                 Evaluation eval = new Evaluation(instance);
                 Solution sol = Solution.GenerateDegreeGreedySolution(instance, eval);
-                Solution improvedSolution = new FilterUnnecesaryNodes(sol, eval).bestSolutionFound;
+                System.out.println("Solución original " + sol);
+                sol = Solution.removeUnnedeed(sol);
+                System.out.println("Solución sin redundantes " + sol);
+                sol = new FilterUnnecesaryNodes(sol, eval).bestSolutionFound;
+                Solution improvedSolution = sol;
+                System.out.println("Solución sin redundantes en la propagación " + sol);
                 long endTime = System.nanoTime();
                 String pathRandomSols = inPath + "/solutions/refine_greedy_solutions/";
                 PrintWriter writer = new PrintWriter(pathRandomSols + i.getName() + ".txt", "UTF-8");

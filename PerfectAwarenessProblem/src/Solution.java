@@ -7,6 +7,7 @@ public class Solution {
     private ArrayList<Integer> solution;
     private boolean[] containSet;
     private int cumCentrality = 0;
+    private String string;
 
     public Solution(ArrayList<Integer> solution) {
         this.solution = solution;
@@ -15,6 +16,12 @@ public class Solution {
             this.containSet[i] = true;
             this.cumCentrality += instance.getCentrality(i);
         }
+        String s = "(";
+        for(int i: solution) {
+            s += Integer.toString(i) + ",";
+        }
+        s += ")";
+        this.string = s;
     }
 
     public Solution(int[] solution) {
@@ -25,6 +32,12 @@ public class Solution {
             this.containSet[i] = true;
             this.cumCentrality += instance.getCentrality(i);
         }
+        String s = "(";
+        for(int i: solution) {
+            s += Integer.toString(i) + ",";
+        }
+        s += ")";
+        this.string = s;
     }
 
     public boolean checkValidityOfSolution(Instance instance){
@@ -53,17 +66,22 @@ public class Solution {
 
     @Override
     public String toString() {
-        String s = "(";
-        for(int i: solution) {
-            s += Integer.toString(i) + ",";
-        }
-        s += ")";
-        return s;
+        return this.string;
     }
 
     @Override
     public int hashCode() {
         return this.toString().hashCode();
+    }
+
+    public static Solution removeUnnedeed(Solution actual) {
+        ArrayList<Integer> newSol = new ArrayList<>();
+        for(Integer seed: actual.solution) {
+            if(instance.nSpreaders.get(seed) < instance.getCentrality(seed)*0.5) {
+                newSol.add(seed);
+            }
+        }
+        return new Solution(newSol);
     }
 
     public static Solution GenerateBruteForce(Instance instance, Evaluation eval) {
