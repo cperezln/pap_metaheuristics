@@ -17,18 +17,15 @@ public class FilterUnnecesaryNodes {
             Solution actSolution = qSols.poll();
             int maxQueueSize = Math.min(actSolution.solutionValue(), (int) Math.ceil(actSolution.solutionValue() / Math.log(actSolution.solutionValue())));
             int added = 0;
-            ArrayList actArrSol = actSolution.getSolution();
+            ArrayList<Integer> actArrSol = actSolution.getSolution();
             for(int i = 0; i < actArrSol.size(); i++) {
-                ArrayList<Integer> newArrSol = new ArrayList<>();
-                // TODO cambiar por operación bitwise
-                for(int j = 0; j < actArrSol.size(); j++) {
-                    if(i != j) newArrSol.add((Integer) actArrSol.get(j));
-                }
-                Solution newPossibleSolution = new Solution(newArrSol);
+                BigInteger bwActSol = actSolution.getBitwiseRepresentation();
+                BigInteger newSol = bwActSol.xor(BigInteger.ONE.shiftLeft(actArrSol.get(i)));
+                Solution newPossibleSolution = new Solution(newSol);
                 if(e.isSolution(newPossibleSolution)) {
                     if(added < maxQueueSize) {
-                        if (!visitedSolutions.contains(newPossibleSolution.bitwiseRepresentation())) {
-                            visitedSolutions.add(newPossibleSolution.bitwiseRepresentation());
+                        if (!visitedSolutions.contains(newSol)) {
+                            visitedSolutions.add(newSol);
                             qSols.add(newPossibleSolution);
                             added++;
                             if (newPossibleSolution.solutionValue() < bestSol.solutionValue()) {

@@ -36,19 +36,18 @@ public class LocalSearch {
                     for (int j = i + 1; j < solutionStructure.size(); j++) {
                         int exchangeOne = solutionStructure.get(i);
                         int exchangeTwo = solutionStructure.get(j);
-                        BigInteger bwSol = solution.bitwiseRepresentation().xor(BigInteger.ONE.shiftLeft(exchangeOne)).xor(BigInteger.ONE.shiftLeft(exchangeTwo)).add(BigInteger.ONE.shiftLeft(node));
-                        Solution finalSol = Solution.SolutionFromBitwiseRepresentation(bwSol);
+                        BigInteger bwSol = solution.getBitwiseRepresentation().xor(BigInteger.ONE.shiftLeft(exchangeOne)).xor(BigInteger.ONE.shiftLeft(exchangeTwo)).add(BigInteger.ONE.shiftLeft(node));
+                        Solution finalSol = new Solution(bwSol);
                         if(e.isSolution(finalSol)) {
                             Solution neighbor = new FilterUnnecesaryNodes(finalSol, e).bestSolutionFound;
                             if (neighbor.solutionValue() < this.bestSolutionFound.solutionValue()) {
                                 this.bestSolutionFound = neighbor;
                                 improved = true;
-                            } else if (evaluateSecondOF && neighbor.solutionValue() == this.bestSolutionFound.solutionValue() && neighbor.getCumCentrality() < this.bestSolutionFound.getCumCentrality()) {
+                            } else if (evaluateSecondOF && /*neighbor.solutionValue() == this.bestSolutionFound.solutionValue() &&*/ neighbor.getCumCentrality() < this.bestSolutionFound.getCumCentrality()) {
                                 this.bestSolutionFound = neighbor;
                                 improved = true;
                             }
                         }
-
                     }
                 }
             }

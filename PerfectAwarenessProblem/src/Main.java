@@ -501,10 +501,12 @@ public class Main {
         if(lsGreedySolution) {
             for(File i: dirInstances.listFiles()) {
                 Instance instance = new Instance(i);
+                System.out.println(i.getName());
                 Solution.instance = instance;
                 long initTime = System.nanoTime();
                 Evaluation eval = new Evaluation(instance);
                 Solution sol = Solution.GenerateDegreeGreedySolution(instance, eval);
+                System.out.println("First solution found: " + sol);
                 LocalSearch ls = new LocalSearch(sol, eval, false);
                 // Solution improvedSolution = new FilterUnnecesaryNodes(ls.bestSolutionFound, eval).bestSolutionFound;
                 Solution improvedSolution = ls.bestSolutionFound;
@@ -531,7 +533,7 @@ public class Main {
 
         if(refineGreedySolution) {
             for(File i: dirInstances.listFiles()) {
-                // i = new File(inPath + "/previous_work/instances/65_133_2_social_0.in");
+                // i = new File(inPath + "/previous_work/instances/85_1272_19_social_0.in");
                 Instance instance = new Instance(i);
                 System.out.println(i.getName());
                 Solution.instance = instance;

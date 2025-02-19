@@ -6,26 +6,51 @@ public class Solution {
     // In this works, solutions are composed as a number of nodes
     static Instance instance;
     private ArrayList<Integer> solution;
+    private BigInteger solutionBw;
     private boolean[] containSet;
     private int cumCentrality = 0;
+    private int solutionValue = Integer.MAX_VALUE;
 
     public Solution(ArrayList<Integer> solution) {
         this.solution = solution;
         this.containSet = new boolean[instance.getNumberNodes()];
+        BigInteger bitwiseRepresentation = BigInteger.ZERO;
         for(int i: this.solution) {
             this.containSet[i] = true;
+            bitwiseRepresentation = bitwiseRepresentation.add(BigInteger.ONE.shiftLeft(i));
             this.cumCentrality += instance.getCentrality(i);
         }
+        this.solutionBw = bitwiseRepresentation;
+        this.solutionValue = this.solution.size();
     }
 
     public Solution(int[] solution) {
         this.solution =  new ArrayList<>();
-        this.containSet = new boolean[solution.length];
+        this.containSet = new boolean[instance.getNumberNodes()];
+        BigInteger bitwiseRepresentation = BigInteger.ZERO;
         for(int i: solution) {
             this.solution.add(i);
+            bitwiseRepresentation = bitwiseRepresentation.add(BigInteger.ONE.shiftLeft(i));
             this.containSet[i] = true;
             this.cumCentrality += instance.getCentrality(i);
         }
+        this.solutionBw = bitwiseRepresentation;
+        this.solutionValue = this.solution.size();
+    }
+
+    public Solution(BigInteger solution) {
+        this.solutionBw = solution;
+        char[] bitwiseRepresentation = this.solutionBw.toString(2).toCharArray();
+        this.containSet = new boolean[instance.getNumberNodes()];
+        this.solution = new ArrayList<>();
+        for(int i = bitwiseRepresentation.length - 1; i >= 0; i--) {
+            if(bitwiseRepresentation[i] == '1') {
+                this.solution.add((bitwiseRepresentation.length - 1) - i);
+                this.containSet[(bitwiseRepresentation.length - 1) - i] = true;
+                this.cumCentrality += instance.getCentrality((bitwiseRepresentation.length - 1) - i);
+            }
+        }
+        this.solutionValue = this.solution.size();
     }
 
     public boolean checkValidityOfSolution(Instance instance){
@@ -40,7 +65,7 @@ public class Solution {
         return cumCentrality;
     }
 
-    public int solutionValue() { return solution.size(); }
+    public int solutionValue() { return solutionValue; }
 
     public void addNode(int node) { this.solution.add(node); }
 
@@ -67,13 +92,8 @@ public class Solution {
         return this.toString().hashCode();
     }
 
-    public BigInteger bitwiseRepresentation() {
-        BigInteger bw = new BigInteger("0".repeat(instance.getNumberNodes()), 2);
-        for(Integer n: solution) {
-            bw = bw.xor(BigInteger.ONE.shiftLeft(n));
-        }
-        return bw;
-    }
+    public BigInteger getBitwiseRepresentation() { return this.solutionBw; }
+
     public static Solution GenerateBruteForce(Instance instance, Evaluation eval) {
         int[] arr = IntStream.range(0, instance.getNumberNodes()).toArray();
         boolean foundSol = false;
@@ -126,6 +146,7 @@ public class Solution {
         }
         return sol;
     }
+
     public static Solution GenerateIncrementalRandomSolution(Instance instance, Evaluation eval) {
         Solution sol = null;
         HashSet<Integer> visited = new HashSet<>();
@@ -194,11 +215,4 @@ public class Solution {
         return sol;
     }
 
-    public static Solution SolutionFromBitwiseRepresentation(BigInteger bw) {
-        ArrayList<Integer> posSol = new ArrayList<>();
-        for(int i = 0; i < instance.getNumberNodes(); i ++){
-            if(!(bw.and(BigInteger.ONE.shiftLeft(i))).equals(BigInteger.ZERO)) posSol.add(i);
-        }
-        return new Solution(posSol);
-    }
 }
