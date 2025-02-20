@@ -142,7 +142,7 @@ public class Main {
             for (File i : dirInstances.listFiles()) {
                 //i = new File(i); // inPath + "/previous_work/instances/10_9_1_social_0.in"
                 // i = new File(inPath + "/previous_work/instances/10_18_2_social_0.in");
-                Instance instance = new Instance(i);
+                Instance instance = new Instance(i, null);
                 String aux = i.getName();
                 String[] auxs = aux.split("\\.");
                 File solution = new File(pathSolutions + "/" + i.getName().split("\\.")[0] + ".sol");
@@ -186,7 +186,7 @@ public class Main {
             Arrays.sort(listFiles);
             for (File i : listFiles) {
                 long initTime = System.nanoTime();
-                Instance instance = new Instance(i);
+                Instance instance = new Instance(i, null);
                 System.out.println("Instance " + i);
                 Evaluation eval = new Evaluation(instance);
                 Solution sol = Solution.GenerateBruteForce(instance, eval);
@@ -221,7 +221,7 @@ public class Main {
             for (File i : dirInstances.listFiles()) {
                 //i = new File(inPath + "/previous_work/instances/800_799_1_social_0.in");
                 // i = new File(inPath + "/previous_work/instances/10_18_2_social_0.in");
-                Instance instance = new Instance(i);
+                Instance instance = new Instance(i, null);
                 long initTime = System.nanoTime();
                 Evaluation eval = new Evaluation(instance);
                 Solution sol = Solution.GenerateRandomSolutionDegree(instance, eval);
@@ -253,13 +253,13 @@ public class Main {
         if(greedySolution) {
             for(File i: dirInstances.listFiles()) {
                 //i = new File(inPath + "/previous_work/instances/15_33_2_social_0.in");
-                Instance instance = new Instance(i);
+                Instance instance = new Instance(i, i.getName());
                 Solution.instance = instance;
                 long initTime = System.nanoTime();
                 Evaluation eval = new Evaluation(instance);
                 Solution sol = Solution.GenerateDegreeGreedySolution(instance, eval);
                 long endTime = System.nanoTime();
-                String pathRandomSols = inPath + "/solutions/greedy_solutions_bw/";
+                String pathRandomSols = inPath + "/solutions/mixed_greedy_solutions_bw/";
                 PrintWriter writer = new PrintWriter(pathRandomSols + i.getName() + ".txt", "UTF-8");
                 if(sol == null) {
                     System.out.println("No se ha encontrado solución con este método para la instancia " + i.getName());
@@ -287,7 +287,7 @@ public class Main {
             for (File i : dirInstances.listFiles()) {
                 //i = new File(inPath + "/previous_work/instances/800_799_1_social_0.in");
                 // i = new File(inPath + "/previous_work/instances/10_18_2_social_0.in");
-                Instance instance = new Instance(i);
+                Instance instance = new Instance(i, null);
                 long initTime = System.nanoTime();
                 Evaluation eval = new Evaluation(instance);
                 Solution sol = Solution.GenerateIncrementalRandomSolution(instance, eval);
@@ -320,7 +320,7 @@ public class Main {
             for (File i : dirInstances.listFiles()) {
                 //i = new File(inPath + "/previous_work/instances/800_799_1_social_0.in");
                 // i = new File(inPath + "/previous_work/instances/10_18_2_social_0.in");
-                Instance instance = new Instance(i);
+                Instance instance = new Instance(i, null);
                 long initTime = System.nanoTime();
                 Evaluation eval = new Evaluation(instance);
                 Solution sol = Solution.GenerateDecrementalRandomSolution(instance, eval);
@@ -356,7 +356,7 @@ public class Main {
             for (File i : dirInstances.listFiles()) {
                 //i = new File(inPath + "/previous_work/instances/800_799_1_social_0.in");
                 // i = new File(inPath + "/previous_work/instances/10_18_2_social_0.in");
-                Instance instance = new Instance(i);
+                Instance instance = new Instance(i, null);
                 Evaluation eval = new Evaluation(instance);
                 Solution bestSolution = null;
                 long bestSolTime = 0;
@@ -390,7 +390,7 @@ public class Main {
             for (File i : dirInstances.listFiles()) {
                 //i = new File(inPath + "/previous_work/instances/800_799_1_social_0.in");
                 // i = new File(inPath + "/previous_work/instances/10_18_2_social_0.in");
-                Instance instance = new Instance(i);
+                Instance instance = new Instance(i, null);
                 Evaluation eval = new Evaluation(instance);
                 ArrayList<Integer> posSol = instance.getNodes();
                 Solution bestSolution = null;
@@ -434,7 +434,7 @@ public class Main {
             for (File i : dirInstances.listFiles()) {
                 //i = new File(inPath + "/previous_work/instances/65_133_2_social_0.in");
                 // i = new File(inPath + "/previous_work/instances/10_18_2_social_0.in");
-                Instance instance = new Instance(i);
+                Instance instance = new Instance(i, null);
                 Solution.instance = instance;
                 long initTime = System.nanoTime();
                 Evaluation eval = new Evaluation(instance);
@@ -463,7 +463,7 @@ public class Main {
         nIterations = 100;
         if(lsIncrementalMultipleRandomSolutions) {
             for (File i : dirInstances.listFiles()) {
-                Instance instance = new Instance(i);
+                Instance instance = new Instance(i, null);
                 Solution.instance = instance;
                 Evaluation eval = new Evaluation(instance);
                 Solution bestSolution = null;
@@ -500,7 +500,7 @@ public class Main {
         }
         if(lsGreedySolution) {
             for(File i: dirInstances.listFiles()) {
-                Instance instance = new Instance(i);
+                Instance instance = new Instance(i, i.getName());
                 System.out.println(i.getName());
                 Solution.instance = instance;
                 long initTime = System.nanoTime();
@@ -516,7 +516,7 @@ public class Main {
                 // Solution improvedSolution = new FilterUnnecesaryNodes(ls.bestSolutionFound, eval).bestSolutionFound;
                 Solution improvedSolution = ls.bestSolutionFound;
                 long endTime = System.nanoTime();
-                String pathRandomSols = inPath + "/solutions/ls_greedy_solutions_bw/";
+                String pathRandomSols = inPath + "/solutions/betweeness_ls_greedy_solutions_bw/";
                 PrintWriter writer = new PrintWriter(pathRandomSols + i.getName() + ".txt", "UTF-8");
                 if(sol == null) {
                     System.out.println("No se ha encontrado solución con este método para la instancia " + i.getName());
@@ -539,7 +539,7 @@ public class Main {
         if(refineGreedySolution) {
             for(File i: dirInstances.listFiles()) {
                 // i = new File(inPath + "/previous_work/instances/65_64_1_social_0.in");
-                Instance instance = new Instance(i);
+                Instance instance = new Instance(i, i.getName());
                 System.out.println(i.getName());
                 Solution.instance = instance;
                 long initTime = System.nanoTime();
