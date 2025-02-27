@@ -19,7 +19,8 @@ public class LocalSearch {
         return sol;
     }
 
-    public LocalSearch(Solution solution, Evaluation e, boolean evaluateSecondOF) {
+    public LocalSearch(Solution solution, Evaluation e) {
+        // TODO evaluar si separar en varias búsquedas locales: una que sea best, una que sea first, una que sea mixta (como esta)
         // Definimos la búsqueda local con el esquema habitual
         this.bestSolutionFound = solution;
         boolean improved = true;

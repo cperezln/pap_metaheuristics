@@ -205,6 +205,7 @@ public class Solution {
             // TODO mejorar esto. Podemos hacer un prorityqueue que ordene directamente los nodos por
             // el factor que estamos seleccionando
             for (Integer j : instance.graph.keySet()) {
+                // TODO el valor del nodo debería ser su centralidad (betweeness, o variaciones) multiplicada por el número de nodos unaware que tiene como vecinos
                 if (instance.nodeValue(j) > bestValue && !inSolution.contains(j)) {
                     selectedNode = j;
                     bestValue = instance.nodeValue(j);

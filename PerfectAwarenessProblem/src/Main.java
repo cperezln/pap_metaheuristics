@@ -439,7 +439,7 @@ public class Main {
                 long initTime = System.nanoTime();
                 Evaluation eval = new Evaluation(instance);
                 Solution sol = Solution.GenerateIncrementalRandomSolution(instance, eval);
-                LocalSearch ls = new LocalSearch(sol, eval, false);
+                LocalSearch ls = new LocalSearch(sol, eval);
                 Solution improvedSolution = ls.bestSolutionFound;
                 long endTime = System.nanoTime();
                 String pathRandomSols = inPath + "/solutions/ls_inc_random_solutions/";
@@ -478,7 +478,7 @@ public class Main {
                     }
                 }
                 long initLsTime = System.nanoTime();
-                LocalSearch ls = new LocalSearch(bestSolution, eval, false);
+                LocalSearch ls = new LocalSearch(bestSolution, eval);
                 Solution improvedSolution = ls.bestSolutionFound;
                 long endLsTime = System.nanoTime();
                 String pathRandomSols = inPath + "/solutions/ls_inc_random_solutions/";
@@ -511,12 +511,12 @@ public class Main {
                 System.out.println("Solution after unneeded: " + sol.solutionValue());
                 sol = new FilterUnnecesaryNodes(sol, eval).bestSolutionFound;
                 System.out.println("Solution after redundant: " + sol.solutionValue());
-                LocalSearch ls = new LocalSearch(sol, eval, false);
+                LocalSearch ls = new LocalSearch(sol, eval);
                 System.out.println("Solution after LS: " + ls.bestSolutionFound.solutionValue());
                 // Solution improvedSolution = new FilterUnnecesaryNodes(ls.bestSolutionFound, eval).bestSolutionFound;
                 Solution improvedSolution = ls.bestSolutionFound;
                 long endTime = System.nanoTime();
-                String pathRandomSols = inPath + "/solutions/betweeness_ls_greedy_solutions_bw/";
+                String pathRandomSols = inPath + "/solutions/2betweeness_ls_greedy_solutions_bw/";
                 PrintWriter writer = new PrintWriter(pathRandomSols + i.getName() + ".txt", "UTF-8");
                 if(sol == null) {
                     System.out.println("No se ha encontrado solución con este método para la instancia " + i.getName());

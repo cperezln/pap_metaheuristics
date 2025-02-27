@@ -18,20 +18,16 @@ public class Evaluation {
     // sacar un algoritmo basado en estructuras más simples, de tal manera que la complejidad computacional se redujese
     public boolean isSolution(Solution sol) {
         // We don't need to know the round we become aware/spreaders. If so, we can compute it just adding a null every time we insert every new neighbor in the queue
-        //boolean[] spreadersTau = new boolean[instance.getNumberNodes()];
-        //boolean[] spreadersTaup = new boolean[instance.getNumberNodes()];
-        BigInteger spreadersTaupbw = new BigInteger("0".repeat(instance.getNumberNodes()), 2);
         int[] spreaderCount = new int[instance.getNumberNodes()];  // Para llevar la cuenta de vecinos propagadores
         BigInteger spreadersTaubw = sol.getBitwiseRepresentation();
         BigInteger qSpreaders = sol.getBitwiseRepresentation();
         int awareSize = sol.solutionValue();
         BigInteger aware = sol.getBitwiseRepresentation();
         boolean[] visited = new boolean[instance.getNumberNodes()];
-        int oldNeigh = 0;
+        BigInteger spreadersTaupbw = spreadersTaubw;
         while(!qSpreaders.equals(BigInteger.ZERO) && awareSize != instance.getNumberNodes()) {
             spreadersTaubw = spreadersTaupbw;
             int node = qSpreaders.getLowestSetBit();
-            BigInteger qSpreadersAux = qSpreaders;
             qSpreaders = qSpreaders.clearBit(node);
             if(!visited[node]) {
                 visited[node] = true;
