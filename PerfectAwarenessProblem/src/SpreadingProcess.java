@@ -1,15 +1,11 @@
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Queue;
 
 
-public class Evaluation {
+public class SpreadingProcess {
 
     private Instance instance;
 
-    public Evaluation(Instance i) {
+    public SpreadingProcess(Instance i) {
         this.instance = i;
     }
 
@@ -19,6 +15,8 @@ public class Evaluation {
     public boolean isSolution(Solution sol) {
         // We don't need to know the round we become aware/spreaders. If so, we can compute it just adding a null every time we insert every new neighbor in the queue
         int[] spreaderCount = new int[instance.getNumberNodes()];  // Para llevar la cuenta de vecinos propagadores
+        int[] awareCount = new int[instance.getNumberNodes()];  // Para llevar la cuenta de vecinos propagadores
+
         BigInteger spreadersTaubw = sol.getBitwiseRepresentation();
         BigInteger qSpreaders = sol.getBitwiseRepresentation();
         int awareSize = sol.solutionValue();
@@ -36,9 +34,11 @@ public class Evaluation {
                     if(!aware.testBit(neigh)) {
                         aware = aware.setBit(neigh);
                         awareSize++;
+                        awareCount[node]++;
                     }
                     // The number of spreaders around neigh increments, as node is a spreader
                     spreaderCount[neigh]++;
+                    awareCount[neigh]++;
                     if (!spreadersTaubw.testBit(neigh) && spreaderCount[neigh] >= instance.graph.get(neigh).size() * 0.5) {
                         spreadersTaupbw = spreadersTaupbw.xor(BigInteger.ONE.shiftLeft(neigh));
                         qSpreaders = qSpreaders.setBit(neigh);
@@ -46,6 +46,9 @@ public class Evaluation {
                 }
             }
         }
+        sol.setAware(awareSize);
+        sol.setAwareCount(awareCount);
+        sol.setSpreaderCount(spreaderCount);
         return awareSize == instance.getNumberNodes();
     }
 

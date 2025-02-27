@@ -4,13 +4,19 @@ import java.util.stream.IntStream;
 
 public class Solution {
     // In this works, solutions are composed as a number of nodes
+    // Static (general) parameters
     public static Instance instance;
-    private ArrayList<Integer> solution;
+    // Structure - related parameters
     private BigInteger solutionBw;
+    // Metrics parameters
     private int cumCentrality = 0;
     private int solutionValue = Integer.MAX_VALUE;
+    // Diffusion parameters
+    private int numberAware = 0;
+    private int[] awareNeighs = null;
+    private int[] spreaderNeighs = null;
 
-    public Solution(ArrayList<Integer> solution) {
+    /*public Solution(ArrayList<Integer> solution) {
         this.solution = solution;
         BigInteger bitwiseRepresentation = BigInteger.ZERO;
         for (int i : this.solution) {
@@ -19,9 +25,9 @@ public class Solution {
         }
         this.solutionBw = bitwiseRepresentation;
         this.solutionValue = this.solution.size();
-    }
+    }*/
 
-    public Solution(int[] solution) {
+    /*public Solution(int[] solution) {
         this.solution = new ArrayList<>();
         BigInteger bitwiseRepresentation = BigInteger.ZERO;
         for (int i : solution) {
@@ -31,12 +37,12 @@ public class Solution {
         }
         this.solutionBw = bitwiseRepresentation;
         this.solutionValue = this.solution.size();
-    }
+    }*/
 
     public Solution(BigInteger solution) {
         this.solutionBw = solution;
-        this.solution = new ArrayList<>();
-        BigInteger nextPossible = this.solutionBw;
+        // this.solution = new ArrayList<>();
+        /*BigInteger nextPossible = this.solutionBw;
         int index = nextPossible.getLowestSetBit();
         if (index != -1) {
             do {
@@ -45,28 +51,47 @@ public class Solution {
                 nextPossible = nextPossible.xor(BigInteger.ONE.shiftLeft(index));
                 index = nextPossible.getLowestSetBit();
             } while (index != -1);
-        }
+        }*/
         this.solutionValue = this.solutionBw.bitCount();
     }
 
-    public boolean checkValidityOfSolution(Instance instance) {
-        return solution.size() < instance.getNumberNodes();
+    public Solution() {
+        // this.solution = new ArrayList<>();
+        this.solutionBw = BigInteger.ZERO;
+        this.solutionValue = 0;
     }
 
-    public ArrayList<Integer> getSolution() {
+    @Override
+    public String toString() {
+        String s = "(";
+        BigInteger nextPossible = this.solutionBw;
+        int index = nextPossible.getLowestSetBit();
+        if (index != -1) {
+            do {
+                s += index;
+                nextPossible = nextPossible.xor(BigInteger.ONE.shiftLeft(index));
+                index = nextPossible.getLowestSetBit();
+            } while (index != -1);
+        }
+        s += ")";
+        return s;
+    }
+
+    @Override
+    public int hashCode() {
+        return this.toString().hashCode();
+    }
+
+    /*public ArrayList<Integer> getSolution() {
         return solution;
-    }
-
-    public int getCumCentrality() {
-        return cumCentrality;
-    }
+    }*/
 
     public int solutionValue() {
         return solutionValue;
     }
 
     public void addNode(int node) {
-        this.solution.add(node);
+        this.solutionBw.add(BigInteger.ONE.shiftLeft(node));
     }
 
     public boolean isIn(int node) {
@@ -79,43 +104,41 @@ public class Solution {
         return ll;
     }
 
-    @Override
-    public String toString() {
-        String s = "(";
-        for (int i : solution) {
-            s += Integer.toString(i) + ",";
-        }
-        s += ")";
-        return s;
-    }
-
-    @Override
-    public int hashCode() {
-        return this.toString().hashCode();
-    }
-
-    public static Solution removeUnnedeed(Solution actual) {
-        ArrayList<Integer> newSol = new ArrayList<>();
-        for (Integer seed : actual.solution) {
-            if (instance.nSpreaders.get(seed) < instance.getCentrality(seed) * 0.5) {
-                newSol.add(seed);
-            }
-        }
-        return new Solution(newSol);
-    }
-
     public BigInteger getBitwiseRepresentation() {
         return this.solutionBw;
     }
 
-    public static Solution GenerateBruteForce(Instance instance, Evaluation eval) {
+    public void removeUnnedeed() {
+        ArrayList<Integer> newSol = new ArrayList<>();
+        BigInteger nextPossible = this.solutionBw;
+        int index = nextPossible.getLowestSetBit();
+        if (index != -1) {
+            do {
+                if(this.spreaderNeighs[index] < instance.graph.get(index).size() * 0.5 && this.solutionBw.testBit(index)) {
+                    this.solutionBw = this.solutionBw.clearBit(index);
+                }
+                nextPossible = nextPossible.xor(BigInteger.ONE.shiftLeft(index));
+                index = nextPossible.getLowestSetBit();
+            } while (index != -1);
+        }
+    }
+
+    public void setAware(int nAware) { this.numberAware = nAware; }
+
+    public void setAwareCount(int[] awareNeighs) { this.awareNeighs = awareNeighs; }
+
+    public void setSpreaderCount(int[] spreaderNeighs) { this.spreaderNeighs = spreaderNeighs; }
+
+    // STATIC METHODS
+
+   /* public static Solution GenerateBruteForce(Instance instance, SpreadingProcess eval) {
         int[] arr = IntStream.range(0, instance.getNumberNodes()).toArray();
         boolean foundSol = false;
         Solution posSol = null;
         for (int solSize = 1; solSize <= instance.getNumberNodes(); solSize++) {
             ArrayList<int[]> possibleSolutions = new ArrayList<>();
             try {
-                Main.computeCombination(arr, arr.length, solSize, possibleSolutions);
+                v1Main.computeCombination(arr, arr.length, solSize, possibleSolutions);
             } catch (Exception e) {
                 e.printStackTrace();
                 break;
@@ -133,7 +156,7 @@ public class Solution {
         return posSol;
     }
 
-    public static Solution GenerateRandomSolutionDegree(Instance instance, Evaluation eval) {
+    public static Solution GenerateRandomSolutionDegree(Instance instance, SpreadingProcess eval) {
         PriorityQueue<PairDeg> nodeDeg = new PriorityQueue<>();
         for (Map.Entry<Integer, ArrayList<Integer>> entry : instance.graph.entrySet()) {
             nodeDeg.add(new PairDeg(entry.getKey(), entry.getValue().size()));
@@ -161,7 +184,7 @@ public class Solution {
         return sol;
     }
 
-    public static Solution GenerateIncrementalRandomSolution(Instance instance, Evaluation eval) {
+    public static Solution GenerateIncrementalRandomSolution(Instance instance, SpreadingProcess eval) {
         Solution sol = null;
         HashSet<Integer> visited = new HashSet<>();
         ArrayList<Integer> posSol = new ArrayList<>();
@@ -179,7 +202,7 @@ public class Solution {
         return sol;
     }
 
-    public static Solution GenerateDecrementalRandomSolution(Instance instance, Evaluation eval) {
+    public static Solution GenerateDecrementalRandomSolution(Instance instance, SpreadingProcess eval) {
         Solution sol = null;
         ArrayList<Integer> posSol = instance.getNodes();
         while (sol == null) {
@@ -193,12 +216,15 @@ public class Solution {
             }
         }
         return sol;
-    }
+    } */
 
-    public static Solution GenerateDegreeGreedySolution(Instance instance, Evaluation eval) {
+    public static Solution GenerateDegreeGreedySolution(Instance instance, SpreadingProcess eval) {
         Solution sol = null;
         BigInteger posSol = BigInteger.ZERO;
         HashSet<Integer> inSolution = new HashSet<>();
+        int[] spreadersCount = new int[instance.getNumberNodes()];
+        int[] awareCount = new int[instance.getNumberNodes()];
+        int awareSize = 0;
         while (sol == null) {
             int selectedNode = -1;
             double bestValue = Integer.MIN_VALUE;
@@ -206,7 +232,7 @@ public class Solution {
             // el factor que estamos seleccionando
             for (Integer j : instance.graph.keySet()) {
                 // TODO el valor del nodo debería ser su centralidad (betweeness, o variaciones) multiplicada por el número de nodos unaware que tiene como vecinos
-                if (instance.nodeValue(j) > bestValue && !inSolution.contains(j)) {
+                if (instance.getCentrality(j) > bestValue && !inSolution.contains(j)) {
                     selectedNode = j;
                     bestValue = instance.nodeValue(j);
                 }
@@ -216,11 +242,16 @@ public class Solution {
                 inSolution.add(selectedNode);
                 // Update the value of the node following the greedy rule
                 for (Integer neigh : instance.graph.get(selectedNode)) {
-                    instance.nSpreaders.put(neigh, instance.nSpreaders.get(neigh) + 1);
+                    spreadersCount[neigh]++;
+                    awareCount[neigh]++;
+                    awareSize++;
                 }
 
             }
             Solution newSol = new Solution(posSol);
+            newSol.setSpreaderCount(spreadersCount);
+            newSol.setAwareCount(awareCount);
+            newSol.setAware(awareSize);
             if (eval.isSolution(newSol)) {
                 sol = newSol;
                 break;
@@ -228,5 +259,4 @@ public class Solution {
         }
         return sol;
     }
-
 }

@@ -9,7 +9,6 @@ public class Instance {
     public String name;
     private int numberNodes;
     private int numberEdges;
-    public HashMap<Integer, Integer> nSpreaders = new HashMap<>();
     private HashMap<Integer, Float> centrality = new HashMap<>();
     private HashMap<Integer, Integer> eCentrality = new HashMap<>();
     private HashMap<Integer, Integer> bCentrality = new HashMap<>();
@@ -39,8 +38,6 @@ public class Instance {
                     if (!edgeListEnd.contains(edge[0])) {
                         edgeListEnd.add(edge[0]);
                     }
-                    if(!nSpreaders.containsKey(edge[0])) nSpreaders.put(edge[0], 0);
-                    if(!nSpreaders.containsKey(edge[1])) nSpreaders.put(edge[1], 0);
                     centrality.put(edge[0], centrality.getOrDefault(edge[0], Float.valueOf(0)) + 1);
                     centrality.put(edge[1], centrality.getOrDefault(edge[1], Float.valueOf(0)) + 1);
                     graph.put(edge[0], edgeListStart);
@@ -62,7 +59,7 @@ public class Instance {
     }
 
     public double nodeValue(int n) {
-        return 0.5*centrality.get(n) - nSpreaders.get(n);
+        return 0.5*centrality.get(n);
     }
 
     public float getCentrality(int n) { return centrality.get(n); }

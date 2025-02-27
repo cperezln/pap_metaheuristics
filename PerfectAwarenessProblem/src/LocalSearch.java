@@ -1,25 +1,11 @@
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.Queue;
 
 public class LocalSearch {
     Solution bestSolutionFound;
 
-    public Solution exchange(Solution sol, int[] pair, int toExchange) {
-        ArrayList<Integer> posSol = new ArrayList<>();
-        for (Integer i : sol.getSolution()) {
-            if (i != pair[0] && i != pair[1]) posSol.add(i);
-        }
-        if (!sol.isIn(toExchange)) {
-            posSol.add(toExchange);
-            return new Solution(posSol);
-        }
-        return sol;
-    }
-
-    public LocalSearch(Solution solution, Evaluation e) {
+    public LocalSearch(Solution solution, SpreadingProcess e) {
         // TODO evaluar si separar en varias búsquedas locales: una que sea best, una que sea first, una que sea mixta (como esta)
         // Definimos la búsqueda local con el esquema habitual
         this.bestSolutionFound = solution;

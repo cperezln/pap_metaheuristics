@@ -6,7 +6,7 @@ import java.util.Queue;
 
 public class FilterUnnecesaryNodes {
     Solution bestSolutionFound;
-    public FilterUnnecesaryNodes(Solution sol, Evaluation e) {
+    public FilterUnnecesaryNodes(Solution sol, SpreadingProcess e) {
         bestSolutionFound = sol;
         Queue<Solution> qSols = new LinkedList<>();
         // Método optimizable
