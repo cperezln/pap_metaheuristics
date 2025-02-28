@@ -8,7 +8,6 @@ public class FilterUnnecesaryNodes {
     public FilterUnnecesaryNodes(Solution sol, SpreadingProcessOptimize e) {
         bestSolutionFound = sol;
         Queue<Solution> qSols = new LinkedList<>();
-        // Método optimizable
         HashSet<BigInteger> visitedSolutions = new HashSet<>();
         qSols.add(sol);
         Solution bestSol = sol;

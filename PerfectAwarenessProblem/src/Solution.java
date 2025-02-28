@@ -12,10 +12,6 @@ public class Solution {
     private int solutionValue = Integer.MAX_VALUE;
     // Diffusion parameters
     private int numberAware = 0;
-    private int[] awareNeighs;
-    private int[] spreaderNeighs = null;
-    private BigInteger awareReached = BigInteger.ZERO;
-    private BigInteger spreadersReached = BigInteger.ZERO;
 
     // GRASP parameters
     public float minVal = Float.MAX_VALUE;
@@ -29,7 +25,6 @@ public class Solution {
     }
 
     public Solution() {
-        // this.solution = new ArrayList<>();
         this.solutionBw = BigInteger.ZERO;
         this.solutionValue = 0;
         this.numberAware = 0;
@@ -138,98 +133,7 @@ public class Solution {
 
     public int getAware() { return this.numberAware; }
 
-    public void setAwareCount(int[] awareNeighs) { this.awareNeighs = awareNeighs; }
-
-    public void setSpreaderCount(int[] spreaderNeighs) { this.spreaderNeighs = spreaderNeighs; }
-
     // STATIC METHODS
-
-   /* public static Solution GenerateBruteForce(Instance instance, SpreadingProcess eval) {
-        int[] arr = IntStream.range(0, instance.getNumberNodes()).toArray();
-        boolean foundSol = false;
-        Solution posSol = null;
-        for (int solSize = 1; solSize <= instance.getNumberNodes(); solSize++) {
-            ArrayList<int[]> possibleSolutions = new ArrayList<>();
-            try {
-                v1Main.computeCombination(arr, arr.length, solSize, possibleSolutions);
-            } catch (Exception e) {
-                e.printStackTrace();
-                break;
-            }
-            for (int[] tuple : possibleSolutions) {
-                posSol = new Solution(tuple);
-                if (eval.isSolution(posSol)) {
-                    System.out.println("Instancia " + instance.name + " con solución " + posSol);
-                    foundSol = true;
-                    break;
-                }
-            }
-            if (foundSol) break;
-        }
-        return posSol;
-    }
-
-    public static Solution GenerateRandomSolutionDegree(Instance instance, SpreadingProcess eval) {
-        PriorityQueue<PairDeg> nodeDeg = new PriorityQueue<>();
-        for (Map.Entry<Integer, ArrayList<Integer>> entry : instance.graph.entrySet()) {
-            nodeDeg.add(new PairDeg(entry.getKey(), entry.getValue().size()));
-        }
-        int k = (int) Math.ceil(instance.getNumberNodes() / 2);
-        int[] setToPick = new int[k];
-        for (int j = 0; j < k; j++) setToPick[j] = nodeDeg.poll().node;
-        Solution sol = null;
-        HashSet<Integer> visited = new HashSet<>();
-        while (sol == null) {
-            int randomNumberOfNodes = (int) Math.ceil(Math.random() * k);
-            visited.add(randomNumberOfNodes);
-            ArrayList<Integer> posSol = new ArrayList<>();
-            for (int j = 0; j < randomNumberOfNodes; j++) {
-                int toAdd = setToPick[Integer.min(Integer.max((int) Math.floor(Math.random() * k) - 1, 0), k - 1)];
-                if (!posSol.contains(toAdd)) posSol.add(toAdd);
-            }
-            if (eval.isSolution(new Solution(posSol))) {
-                sol = new Solution(posSol);
-                break;
-            } else if (visited.size() == k) {
-                break;
-            }
-        }
-        return sol;
-    }
-
-    public static Solution GenerateIncrementalRandomSolution(Instance instance, SpreadingProcess eval) {
-        Solution sol = null;
-        HashSet<Integer> visited = new HashSet<>();
-        ArrayList<Integer> posSol = new ArrayList<>();
-        ArrayList<Integer> nodes = instance.getNodes();
-        while (sol == null) {
-            int randomIndex = Math.min((int) Math.ceil(Math.random() * nodes.size()), nodes.size() - 1);
-            int posNode = nodes.get(randomIndex);
-            if (!visited.contains(posNode)) {
-                visited.add(posNode);
-                posSol.add(posNode);
-            }
-            Solution auxSol = new Solution(posSol);
-            if (eval.isSolution(auxSol)) sol = auxSol;
-        }
-        return sol;
-    }
-
-    public static Solution GenerateDecrementalRandomSolution(Instance instance, SpreadingProcess eval) {
-        Solution sol = null;
-        ArrayList<Integer> posSol = instance.getNodes();
-        while (sol == null) {
-            int randomIndex = Math.min((int) Math.ceil(Math.random() * posSol.size()), posSol.size() - 1);
-            int posNode = posSol.get(randomIndex);
-            posSol.remove(randomIndex);
-            Solution auxSol = new Solution(posSol);
-            if (!eval.isSolution(auxSol)) {
-                auxSol.addNode(posNode);
-                sol = auxSol;
-            }
-        }
-        return sol;
-    } */
 
     public static Solution GenerateDegreeGreedySolution(Instance instance, SpreadingProcessOptimize eval) {
         Solution sol = new Solution();
@@ -242,10 +146,8 @@ public class Solution {
         while (true) {
             int selectedNode = -1;
             double bestValue = Integer.MIN_VALUE;
-            // TODO mejorar esto. Podemos hacer un prorityqueue que ordene directamente los nodos por
-            // el factor que estamos seleccionando
+
             for (Integer j : instance.graph.keySet()) {
-                // TODO el valor del nodo debería ser su centralidad (betweeness, o variaciones) multiplicada por el número de nodos unaware que tiene como vecinos
                 if (Math.max(instance.getCentrality(j), 0.005)*Math.max(instance.graph.get(j).size() - sol.getAwareNeighs(j), 1) > bestValue && !sol.isIn(j)) {
                     selectedNode = j;
                     bestValue = Math.max(instance.getCentrality(j), 0.005)*Math.max(instance.graph.get(j).size() - sol.getAwareNeighs(j), 1);

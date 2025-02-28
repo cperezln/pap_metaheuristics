@@ -12,10 +12,7 @@ public class SpreadingProcessCheck {
     public SpreadingProcessCheck(Instance i) {
         this.instance = i;
     }
-
-    // TODO sería interesante darle una vuelta a esta forma de estudiar si la solución es solución, efectivamente.
-    // Si bien es cierto que haría falta simular el proceso de propagación, ¿sería necesario hacerlo con tantas estructuras de datos complejas? Creo que podríamos
-    // sacar un algoritmo basado en estructuras más simples, de tal manera que la complejidad computacional se redujese
+    // Método más evidente que el optimizado para comprobar la validez de una solución
     public boolean isSolution(ArrayList<Integer> sol) {
         // We don't need to know the round we become aware/spreaders. If so, we can compute it just adding a null every time we insert every new neighbor in the queue
         Queue<Integer> qSpreaders = new LinkedList<>();
