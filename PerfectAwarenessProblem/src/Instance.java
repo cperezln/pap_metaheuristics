@@ -1,5 +1,6 @@
 import java.io.FileNotFoundException;
 import java.lang.reflect.Array;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.io.File;
@@ -9,12 +10,10 @@ public class Instance {
     public String name;
     private int numberNodes;
     private int numberEdges;
+    private HashMap<Integer, Integer> degreeMap = new HashMap<>();
     private HashMap<Integer, Float> centrality = new HashMap<>();
-    private HashMap<Integer, Integer> eCentrality = new HashMap<>();
-    private HashMap<Integer, Integer> bCentrality = new HashMap<>();
-    private int seed;
-    private int k;
-
+    private HashMap<Integer, Integer> state = new HashMap<>(); // 0: ignorant, 1: aware, 2: spreader
+    private int seed, k;
     HashMap<Integer, ArrayList<Integer>> graph = new HashMap<>();
 
     public Instance(File file, String c) {
@@ -38,10 +37,15 @@ public class Instance {
                     if (!edgeListEnd.contains(edge[0])) {
                         edgeListEnd.add(edge[0]);
                     }
+                    // TODO revisar esto. aquí estoy modificando la centralidad de betweeness con información del grado
+                    degreeMap.put(edge[0], degreeMap.getOrDefault(edge[0], Integer.valueOf(0)) + 1);
+                    degreeMap.put(edge[1], degreeMap.getOrDefault(edge[1], Integer.valueOf(0)) + 1);
                     centrality.put(edge[0], centrality.getOrDefault(edge[0], Float.valueOf(0)) + 1);
                     centrality.put(edge[1], centrality.getOrDefault(edge[1], Float.valueOf(0)) + 1);
                     graph.put(edge[0], edgeListStart);
                     graph.put(edge[1], edgeListEnd);
+                    state.put(edge[0], 0);
+                    state.put(edge[1], 0);
                 }
             }
         }
@@ -58,12 +62,13 @@ public class Instance {
         return new ArrayList<Integer>(this.graph.keySet());
     }
 
-    public double nodeValue(int n) {
-        return 0.5*centrality.get(n);
-    }
-
     public float getCentrality(int n) { return centrality.get(n); }
 
+    public int getGreatestDegree() {
+        int maxDeg = 0;
+        for(int node = 0; node < numberNodes; node++) if(maxDeg < degreeMap.get(node)) maxDeg = degreeMap.get(node);
+        return maxDeg;
+    }
     public void setCentrality(String file) throws FileNotFoundException {
         String inPath = "/home/cristian/Escritorio/TFM/pap_metaheuristics/centralities/";
         HashMap<Integer, Float> bw = new HashMap<>();
@@ -73,6 +78,34 @@ public class Instance {
             this.centrality.put(Integer.parseInt(line[0]), Float.parseFloat(line[1]));
         }
     }
+
+    public void setState(int node, int state) {
+        switch (state) {
+            case 0:
+                this.state.put(node, 0);
+                break;
+            case 1:
+                if (this.state.get(node) <= 1) {
+                    this.state.put(node, 1);
+                    break;
+                }
+            case 2:
+                if(this.state.get(node) <= 2) {
+                    this.state.put(node, 2);
+                    break;
+                }
+        }
+    }
+
+    public void resetState(Solution sol) {
+        this.state = new HashMap<>();
+        for(int node = 0; node < numberNodes; node++) {
+         if (sol.isIn(node)) { this.state.put(node, 2); }
+         else { this.state.put(node, 0); }
+        }
+    }
+
+    public int getNodeState(int node) { return this.state.get(node); }
 
 
 }

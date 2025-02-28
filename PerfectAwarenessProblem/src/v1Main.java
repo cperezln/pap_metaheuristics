@@ -136,7 +136,7 @@ public class v1Main {
 
         // 1. Comprobar que las soluciones previas funcionan
         boolean checkPrevSols = false;
-        if (checkPrevSols) {
+        /*if (checkPrevSols) {
             ArrayList<String> notSolved = new ArrayList<>();
             int correctlySolvedProblems = 0;
             for (File i : dirInstances.listFiles()) {
@@ -170,7 +170,7 @@ public class v1Main {
             } else {
                 for (String i : notSolved) System.out.println("Este problema no tiene solución " + i);
             }
-        }
+        }*/
         // 2. Generador de soluciones por fuerza bruta.
         /* Como primera aproximación, vamos a hacerlo por fuerza bruta. Para esto, iteraremos por todas las posibilidades de tamaño de semilla perfecta
          (como puede ser un grafo completamente disconexo, i.e, |E| = 0, hay que comprobar hasta semillas perfecta de tamaño |V|.
@@ -179,7 +179,7 @@ public class v1Main {
          En este caso, será probar todas las posibles combinaciones desde 1 hasta |V| de nodos, estudiando si alguna es solución, (n sobre i) con i en (1...|V|).
         */
 
-        if (bruteForce) {
+        /*if (bruteForce) {
             ArrayList<String> notSolved = new ArrayList<>();
             // Evidentemente, el metodo por fuerza bruta es computacionalmente irrisorio. Habría que plantear un metodo aleatorio y seguir
             File[] listFiles = dirInstances.listFiles();
@@ -209,7 +209,7 @@ public class v1Main {
                     writer.close();
                 }
             }
-        }
+        }*/
         // 3. Generador voraz-aleatorio de soluciones
         /*
         No es trivial cómo generar soluciones para el problema. El PAP busca soluciones que sean perfect seed (es decir, que con el conjunto seleccionado de nodos consiga que todos los nodos estén aware)
@@ -217,7 +217,7 @@ public class v1Main {
         Si tomamos un conjunto aleatorio de los k primeros nodos con más centralidad por grado (es decir, mayor grado. Probablemente extensible a otros tipos de centralidades), podemos simplemente comprobar si,
         los subconjuntos aleatorios de distintos tamaños (tamaño de la semilla) son solución, entonces tendremos una solución pseudo-aleatoria. Esto habría que terminar de consultarlo con Isaac
          */
-        if (randomSolutionByDegree) {
+        /*if (randomSolutionByDegree) {
             for (File i : dirInstances.listFiles()) {
                 //i = new File(inPath + "/previous_work/instances/800_799_1_social_0.in");
                 // i = new File(inPath + "/previous_work/instances/10_18_2_social_0.in");
@@ -244,13 +244,13 @@ public class v1Main {
                     writer.close();
                 }
             }
-        }
+        }*/
         // 3.5. Generador voraz (centralidad por grado) de soluciones
         /*
         Análogo al anterior, quitando la componente aleatoria. TODO a esto añadir algo más de información: la CL en el GRASP sería útil considerarla como dg(v)*0.5 - n_i(v)
         es decir, el threshold del nodo menos el número de spreaders que tiene alrededor. Esto es más información que sería útil tener.
         */
-        if(greedySolution) {
+        /*if(greedySolution) {
             for(File i: dirInstances.listFiles()) {
                 //i = new File(inPath + "/previous_work/instances/15_33_2_social_0.in");
                 Instance instance = new Instance(i, i.getName());
@@ -277,13 +277,13 @@ public class v1Main {
                     writer.close();
                 }
             }
-        }
+        }*/
         // 4. Generador aleatorio de soluciones (incremental)
         /*
         Vamos a desarrollar un generador aleatorio de soluciones. Lo que hará este metodo será coger nodos aleatorios, e ir metiendolos en una posible solución, hasta
         que esta sea feasible.
          */
-        if(incrementalRandomSolution) {
+        /*if(incrementalRandomSolution) {
             for (File i : dirInstances.listFiles()) {
                 //i = new File(inPath + "/previous_work/instances/800_799_1_social_0.in");
                 // i = new File(inPath + "/previous_work/instances/10_18_2_social_0.in");
@@ -310,13 +310,13 @@ public class v1Main {
                 }
             }
 
-        }
+        }*/
         // 5. Generador aleatorio de soluciones (decremental)
         /*
         Vamos a desarrollador un generador aleatorio de soluciones. Este metodo cogerá todos los nodos de la instancia, e irá quitando nodos aleatorios hasta que dejemos
         de tener una posible solución
          */
-        if(decrementalRandomSolution) {
+        /*if(decrementalRandomSolution) {
             for (File i : dirInstances.listFiles()) {
                 //i = new File(inPath + "/previous_work/instances/800_799_1_social_0.in");
                 // i = new File(inPath + "/previous_work/instances/10_18_2_social_0.in");
@@ -343,7 +343,7 @@ public class v1Main {
                 }
             }
 
-        }
+        }*/
 
         // MÚLTIPLES ITERACIONES PARA LOS GENERADORES ALEATORIOS
         /*
@@ -352,7 +352,7 @@ public class v1Main {
         */
 
         int nIterations = 100;
-        if(incrementalMultipleRandomSolutions) {
+        /*if(incrementalMultipleRandomSolutions) {
             for (File i : dirInstances.listFiles()) {
                 //i = new File(inPath + "/previous_work/instances/800_799_1_social_0.in");
                 // i = new File(inPath + "/previous_work/instances/10_18_2_social_0.in");
@@ -385,9 +385,9 @@ public class v1Main {
                     writer.close();
                 }
             }
-        }
+        }*/
 
-        if(decrementalMultipleRandomSolutions) {
+        /*if(decrementalMultipleRandomSolutions) {
             for (File i : dirInstances.listFiles()) {
                 //i = new File(inPath + "/previous_work/instances/800_799_1_social_0.in");
                 // i = new File(inPath + "/previous_work/instances/10_18_2_social_0.in");
@@ -423,7 +423,7 @@ public class v1Main {
                 }
             }
 
-        }
+        }*/
 
         /*
         Segunda fase de la generación de resultados. Ahora, vamos a generar soluciones: aleatorias, incrementales aleatorias y voraz por grado. Después de generar cada una de estas
@@ -431,7 +431,7 @@ public class v1Main {
 
          Generador de soluciones aleatorias, método incremental, con búsqueda local
         */
-        if(lsIncrementalRandomSolution) {
+        /*if(lsIncrementalRandomSolution) {
             for (File i : dirInstances.listFiles()) {
                 //i = new File(inPath + "/previous_work/instances/65_133_2_social_0.in");
                 // i = new File(inPath + "/previous_work/instances/10_18_2_social_0.in");
@@ -460,10 +460,10 @@ public class v1Main {
                     writer.close();
                 }
             }
-        }
+        }*/
 
         nIterations = 100;
-        if(lsIncrementalMultipleRandomSolutions) {
+        /*if(lsIncrementalMultipleRandomSolutions) {
             for (File i : dirInstances.listFiles()) {
                 Instance instance = new Instance(i, null);
                 Solution.instance = instance;
@@ -499,9 +499,9 @@ public class v1Main {
                     writer.close();
                 }
             }
-        }
+        }*/
 
-        if(lsGreedySolution) {
+        /*if(lsGreedySolution) {
             for(File i: dirInstances.listFiles()) {
                 Instance instance = new Instance(i, i.getName());
                 System.out.println(i.getName());
@@ -510,7 +510,7 @@ public class v1Main {
                 SpreadingProcess eval = new SpreadingProcess(instance);
                 Solution sol = Solution.GenerateDegreeGreedySolution(instance, eval);
                 System.out.println("First solution found: " + sol.solutionValue());
-                sol = Solution.removeUnnedeed(sol);
+                sol.removeUnnedeed();
                 System.out.println("Solution after unneeded: " + sol.solutionValue());
                 sol = new FilterUnnecesaryNodes(sol, eval).bestSolutionFound;
                 System.out.println("Solution after redundant: " + sol.solutionValue());
@@ -537,9 +537,9 @@ public class v1Main {
                     writer.close();
                 }
             }
-        }
+        }*/
 
-        if(refineGreedySolution) {
+        /*if(refineGreedySolution) {
             for(File i: dirInstances.listFiles()) {
                 // i = new File(inPath + "/previous_work/instances/65_64_1_social_0.in");
                 Instance instance = new Instance(i, i.getName());
@@ -569,7 +569,7 @@ public class v1Main {
                     writer.close();
                 }
             }
-        }
+        }*/
 
     }
 }

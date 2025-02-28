@@ -1,11 +1,11 @@
 import java.math.BigInteger;
 
 
-public class SpreadingProcess {
+public class SpreadingProcessOptimize {
 
     private Instance instance;
 
-    public SpreadingProcess(Instance i) {
+    public SpreadingProcessOptimize(Instance i) {
         this.instance = i;
     }
 
@@ -16,10 +16,16 @@ public class SpreadingProcess {
         // We don't need to know the round we become aware/spreaders. If so, we can compute it just adding a null every time we insert every new neighbor in the queue
         int[] spreaderCount = new int[instance.getNumberNodes()];  // Para llevar la cuenta de vecinos propagadores
         int[] awareCount = new int[instance.getNumberNodes()];  // Para llevar la cuenta de vecinos propagadores
-
+        for(int node = 0; node < instance.getNumberNodes(); node++) {
+            if(instance.getNodeState(node) == 2) {
+                for(int neigh: instance.graph.get(node)) {
+                    spreaderCount[neigh]++;
+                }
+            }
+        }
         BigInteger spreadersTaubw = sol.getBitwiseRepresentation();
         BigInteger qSpreaders = sol.getBitwiseRepresentation();
-        int awareSize = sol.solutionValue();
+        int awareSize = sol.getAware();
         BigInteger aware = sol.getBitwiseRepresentation();
         boolean[] visited = new boolean[instance.getNumberNodes()];
         BigInteger spreadersTaupbw = spreadersTaubw;
@@ -34,14 +40,15 @@ public class SpreadingProcess {
                     if(!aware.testBit(neigh)) {
                         aware = aware.setBit(neigh);
                         awareSize++;
-                        awareCount[node]++;
+                        this.instance.setState(neigh, 1);
+                        // Hay que borrar esto, y simplemente mantener los awares y los spreaders después de cada evaluación en Solution. Con estos, ya podemos calcular lo que necesitamos
                     }
                     // The number of spreaders around neigh increments, as node is a spreader
                     spreaderCount[neigh]++;
-                    awareCount[neigh]++;
                     if (!spreadersTaubw.testBit(neigh) && spreaderCount[neigh] >= instance.graph.get(neigh).size() * 0.5) {
                         spreadersTaupbw = spreadersTaupbw.xor(BigInteger.ONE.shiftLeft(neigh));
                         qSpreaders = qSpreaders.setBit(neigh);
+                        this.instance.setState(neigh, 2);
                     }
                 }
             }

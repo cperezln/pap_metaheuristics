@@ -1,6 +1,5 @@
 import java.math.BigInteger;
 import java.util.*;
-import java.util.stream.IntStream;
 
 public class Solution {
     // In this works, solutions are composed as a number of nodes
@@ -15,44 +14,17 @@ public class Solution {
     private int numberAware = 0;
     private int[] awareNeighs = null;
     private int[] spreaderNeighs = null;
+    private BigInteger awareReached = BigInteger.ZERO;
+    private BigInteger spreadersReached = BigInteger.ZERO;
+    // GRASP parameters
+    public float minVal = Float.MAX_VALUE;
+    public float maxVal = Float.MIN_VALUE;
 
-    /*public Solution(ArrayList<Integer> solution) {
-        this.solution = solution;
-        BigInteger bitwiseRepresentation = BigInteger.ZERO;
-        for (int i : this.solution) {
-            bitwiseRepresentation = bitwiseRepresentation.add(BigInteger.ONE.shiftLeft(i));
-            this.cumCentrality += instance.getCentrality(i);
-        }
-        this.solutionBw = bitwiseRepresentation;
-        this.solutionValue = this.solution.size();
-    }*/
-
-    /*public Solution(int[] solution) {
-        this.solution = new ArrayList<>();
-        BigInteger bitwiseRepresentation = BigInteger.ZERO;
-        for (int i : solution) {
-            this.solution.add(i);
-            bitwiseRepresentation = bitwiseRepresentation.add(BigInteger.ONE.shiftLeft(i));
-            this.cumCentrality += instance.getCentrality(i);
-        }
-        this.solutionBw = bitwiseRepresentation;
-        this.solutionValue = this.solution.size();
-    }*/
 
     public Solution(BigInteger solution) {
         this.solutionBw = solution;
-        // this.solution = new ArrayList<>();
-        /*BigInteger nextPossible = this.solutionBw;
-        int index = nextPossible.getLowestSetBit();
-        if (index != -1) {
-            do {
-                this.solution.add(index);
-                this.cumCentrality += instance.getCentrality(index);
-                nextPossible = nextPossible.xor(BigInteger.ONE.shiftLeft(index));
-                index = nextPossible.getLowestSetBit();
-            } while (index != -1);
-        }*/
-        this.solutionValue = this.solutionBw.bitCount();
+        this.solutionValue = solution.bitCount();
+        this.numberAware = this.solutionValue;
     }
 
     public Solution() {
@@ -68,7 +40,7 @@ public class Solution {
         int index = nextPossible.getLowestSetBit();
         if (index != -1) {
             do {
-                s += index;
+                s += index + ", ";
                 nextPossible = nextPossible.xor(BigInteger.ONE.shiftLeft(index));
                 index = nextPossible.getLowestSetBit();
             } while (index != -1);
@@ -82,16 +54,25 @@ public class Solution {
         return this.toString().hashCode();
     }
 
-    /*public ArrayList<Integer> getSolution() {
-        return solution;
-    }*/
-
     public int solutionValue() {
         return solutionValue;
     }
 
     public void addNode(int node) {
-        this.solutionBw.add(BigInteger.ONE.shiftLeft(node));
+        this.solutionBw = this.solutionBw.add(BigInteger.ONE.shiftLeft(node));
+        this.solutionValue = this.solutionBw.bitCount();
+        this.numberAware = this.solutionValue;
+        instance.setState(node, 2);
+        for(int neigh: instance.graph.get(node)) {
+            instance.setState(neigh, 1);
+        }
+    }
+
+    public void removeNode(int node) {
+        this.solutionBw.clearBit(node);
+        this.solutionValue = this.solutionBw.bitCount();
+        this.numberAware = this.solutionValue;
+        instance.setState(node, 0);
     }
 
     public boolean isIn(int node) {
@@ -104,18 +85,30 @@ public class Solution {
         return ll;
     }
 
+    public ArrayList<PairVal> candidateList() {
+        ArrayList<PairVal> al = new ArrayList<>();
+        for (int j : instance.getNodes()) {
+            if (!this.isIn(j)) {
+                float nodeValue = instance.getCentrality(j)*(instance.graph.get(j).size() - getAwareNeighs(j));
+                if(nodeValue > maxVal) maxVal = nodeValue;
+                if(nodeValue < minVal) minVal = nodeValue;
+                al.add(new PairVal(j, nodeValue));
+            }
+        }
+        return al;
+    }
+
     public BigInteger getBitwiseRepresentation() {
         return this.solutionBw;
     }
 
     public void removeUnnedeed() {
-        ArrayList<Integer> newSol = new ArrayList<>();
         BigInteger nextPossible = this.solutionBw;
         int index = nextPossible.getLowestSetBit();
         if (index != -1) {
             do {
-                if(this.spreaderNeighs[index] < instance.graph.get(index).size() * 0.5 && this.solutionBw.testBit(index)) {
-                    this.solutionBw = this.solutionBw.clearBit(index);
+                if(this.getSpreaderNeighs(index) >= instance.graph.get(index).size() * 0.5 && this.isIn(index)) {
+                    this.removeNode(index);
                 }
                 nextPossible = nextPossible.xor(BigInteger.ONE.shiftLeft(index));
                 index = nextPossible.getLowestSetBit();
@@ -123,7 +116,25 @@ public class Solution {
         }
     }
 
+    public int getAwareNeighs(int node) {
+        int numberOf = 0;
+        for(int i: instance.graph.get(node)) {
+            if(instance.getNodeState(i) >= 1) numberOf++;
+        }
+        return numberOf;
+    }
+
+    public int getSpreaderNeighs(int node) {
+        int numberOf = 0;
+        for(int i: instance.graph.get(node)) {
+            if(instance.getNodeState(i) == 2) numberOf++;
+        }
+        return numberOf;
+    }
+
     public void setAware(int nAware) { this.numberAware = nAware; }
+
+    public int getAware() { return this.numberAware; }
 
     public void setAwareCount(int[] awareNeighs) { this.awareNeighs = awareNeighs; }
 
@@ -218,42 +229,31 @@ public class Solution {
         return sol;
     } */
 
-    public static Solution GenerateDegreeGreedySolution(Instance instance, SpreadingProcess eval) {
-        Solution sol = null;
+    public static Solution GenerateDegreeGreedySolution(Instance instance, SpreadingProcessOptimize eval) {
+        Solution sol = new Solution();
         BigInteger posSol = BigInteger.ZERO;
         HashSet<Integer> inSolution = new HashSet<>();
         int[] spreadersCount = new int[instance.getNumberNodes()];
         int[] awareCount = new int[instance.getNumberNodes()];
         int awareSize = 0;
-        while (sol == null) {
+        eval.isSolution(sol);
+        while (true) {
             int selectedNode = -1;
             double bestValue = Integer.MIN_VALUE;
             // TODO mejorar esto. Podemos hacer un prorityqueue que ordene directamente los nodos por
             // el factor que estamos seleccionando
             for (Integer j : instance.graph.keySet()) {
                 // TODO el valor del nodo debería ser su centralidad (betweeness, o variaciones) multiplicada por el número de nodos unaware que tiene como vecinos
-                if (instance.getCentrality(j) > bestValue && !inSolution.contains(j)) {
+                if (Math.max(instance.getCentrality(j), 0.005)*Math.max(instance.graph.get(j).size() - sol.getAwareNeighs(j), 1) > bestValue && !sol.isIn(j)) {
                     selectedNode = j;
-                    bestValue = instance.nodeValue(j);
+                    bestValue = Math.max(instance.getCentrality(j), 0.005)*Math.max(instance.graph.get(j).size() - sol.getAwareNeighs(j), 1);
                 }
             }
             if (selectedNode != -1) {
-                posSol = posSol.add(BigInteger.ONE.shiftLeft(selectedNode));
-                inSolution.add(selectedNode);
-                // Update the value of the node following the greedy rule
-                for (Integer neigh : instance.graph.get(selectedNode)) {
-                    spreadersCount[neigh]++;
-                    awareCount[neigh]++;
-                    awareSize++;
-                }
-
+                sol.addNode(selectedNode);
             }
-            Solution newSol = new Solution(posSol);
-            newSol.setSpreaderCount(spreadersCount);
-            newSol.setAwareCount(awareCount);
-            newSol.setAware(awareSize);
-            if (eval.isSolution(newSol)) {
-                sol = newSol;
+            instance.resetState(sol);
+            if (eval.isSolution(sol)) {
                 break;
             }
         }

@@ -1,11 +1,10 @@
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.LinkedList;
 
 public class LocalSearch {
     Solution bestSolutionFound;
 
-    public LocalSearch(Solution solution, SpreadingProcess e) {
+    public LocalSearch(Solution solution, SpreadingProcessOptimize e) {
         // TODO evaluar si separar en varias búsquedas locales: una que sea best, una que sea first, una que sea mixta (como esta)
         // Definimos la búsqueda local con el esquema habitual
         this.bestSolutionFound = solution;
@@ -16,29 +15,38 @@ public class LocalSearch {
             solution = this.bestSolutionFound;
             improved = false;
             LinkedList<Integer> nodesNotInSolution = this.bestSolutionFound.nodesNotInSolution();
-            ArrayList<Integer> solutionStructure = solution.getSolution();
             for (Integer node : nodesNotInSolution) {
+                if(improved) break;
                 // El intercambio consiste en coger uno de los nodos que no está en la solución, e intentar intercambiarlo por un par de los nodos
                 // que sí que están.
                 int iter = 0;
-                for (int i = 0; i < solutionStructure.size(); i++) {
+                BigInteger nextPossibleI = solution.getBitwiseRepresentation();
+                int indexI = nextPossibleI.getLowestSetBit();
+                while (indexI != -1) {
                     if (improved) break;
-                    for (int j = i + 1; j < solutionStructure.size(); j++) {
+                    BigInteger nextPossibleJ = nextPossibleI.xor(BigInteger.ONE.shiftLeft(indexI));
+                    int indexJ = nextPossibleJ.getLowestSetBit();
+                    while (indexJ != -1) {
                         if(improved) break;
                         iter++;
-                        int exchangeOne = solutionStructure.get(i);
-                        int exchangeTwo = solutionStructure.get(j);
+                        int exchangeOne = indexI;
+                        int exchangeTwo = indexJ;
                         BigInteger bwSol = solution.getBitwiseRepresentation().xor(BigInteger.ONE.shiftLeft(exchangeOne)).xor(BigInteger.ONE.shiftLeft(exchangeTwo)).add(BigInteger.ONE.shiftLeft(node));
                         Solution finalSol = new Solution(bwSol);
+                        Solution.instance.resetState(finalSol);
                         if(e.isSolution(finalSol)) {
-                            // Solution neighbor = new FilterUnnecesaryNodes(finalSol, e).bestSolutionFound;
-                            if (finalSol.solutionValue() < this.bestSolutionFound.solutionValue()) {
-                                System.out.println("Iteraciones para mejorar " + iter + " con resultado de FO " + finalSol.solutionValue());
-                                this.bestSolutionFound = finalSol;
+                            Solution neighbor = new FilterUnnecesaryNodes(finalSol, e).bestSolutionFound;
+                            if (neighbor.solutionValue() < this.bestSolutionFound.solutionValue()) {
+                                // System.out.println("Iteraciones para mejorar " + iter + " con resultado de FO " + neighbor.solutionValue());
+                                this.bestSolutionFound = neighbor;
                                 improved = true;
                             }
                         }
+                        nextPossibleJ = nextPossibleJ.xor(BigInteger.ONE.shiftLeft(indexJ));
+                        indexJ = nextPossibleJ.getLowestSetBit();
                     }
+                    nextPossibleI = nextPossibleI.xor(BigInteger.ONE.shiftLeft(indexI));
+                    indexI = nextPossibleI.getLowestSetBit();
                 }
             }
         }
