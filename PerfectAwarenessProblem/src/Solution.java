@@ -12,10 +12,11 @@ public class Solution {
     private int solutionValue = Integer.MAX_VALUE;
     // Diffusion parameters
     private int numberAware = 0;
-    private int[] awareNeighs = null;
+    private int[] awareNeighs;
     private int[] spreaderNeighs = null;
     private BigInteger awareReached = BigInteger.ZERO;
     private BigInteger spreadersReached = BigInteger.ZERO;
+
     // GRASP parameters
     public float minVal = Float.MAX_VALUE;
     public float maxVal = Float.MIN_VALUE;
@@ -31,6 +32,7 @@ public class Solution {
         // this.solution = new ArrayList<>();
         this.solutionBw = BigInteger.ZERO;
         this.solutionValue = 0;
+        this.numberAware = 0;
     }
 
     @Override

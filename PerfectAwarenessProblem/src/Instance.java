@@ -37,7 +37,6 @@ public class Instance {
                     if (!edgeListEnd.contains(edge[0])) {
                         edgeListEnd.add(edge[0]);
                     }
-                    // TODO revisar esto. aquí estoy modificando la centralidad de betweeness con información del grado
                     degreeMap.put(edge[0], degreeMap.getOrDefault(edge[0], Integer.valueOf(0)) + 1);
                     degreeMap.put(edge[1], degreeMap.getOrDefault(edge[1], Integer.valueOf(0)) + 1);
                     centrality.put(edge[0], centrality.getOrDefault(edge[0], Float.valueOf(0)) + 1);
