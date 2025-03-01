@@ -15,7 +15,7 @@ public class Main {
         File dirInstances = new File(pathInstances);
 
         // Pruebas
-        boolean lsGreedySolution = true;
+        boolean lsGreedySolution = false;
         if(lsGreedySolution) {
             for(File i: dirInstances.listFiles()) {
                 //i = new File(pathInstances + "/1000_999_1_social_0.in");
@@ -55,22 +55,31 @@ public class Main {
             }
         }
 
-        boolean grasp = false;
+        boolean grasp = true;
         if(grasp) {
             // Ejecución del GRASP
             for (File i : dirInstances.listFiles()) {
-                int nIterGrasp = 100;
+                int nIterGrasp = 50;
                 Solution finalSol = null;
                 Instance instance = new Instance(i, i.getName());
+                System.out.println(String.format("------------------------ INSTANCE %s ------------------------", i.getName()));
                 Solution bestSolutionFound = null;
                 int bestValueFound = Integer.MAX_VALUE;
                 long initTime = System.nanoTime();
+                boolean breakFor = false;
                 for (int j = 0; j < nIterGrasp; j++) {
+                    if(breakFor) break;
                     SpreadingProcessOptimize eval = new SpreadingProcessOptimize(instance);
                     Solution.instance = instance;
                     // Fase constructiva
                     Solution graspSol = new Solution();
+                    long constructedTime = System.nanoTime();
                     while (!eval.isSolution(graspSol)) {
+                        // REVISAR UNA SOLUCIÓN PARECIDA A LA QUE TIENEN ELLOS PARA EL CANDIDATE LIST, PORQUE NO PUEDE SER QUE DEL ALGORITMO SE LLEVE LA MITAD DEL TIEMPO
+                        // DARLE UNA VUELTA A LAS APROXIMACIONES QUE MEJORAN EL ALPHA EN CADA ITERACIÓN, PUEDEN SER INTERESANTES
+                        // TAMBIÉN ES POSIBLE PLANTEAR LA ENCAPSULACIÓN DEL GRASP EN UN ITERATED GREEDY, PARA TENER LÍMITES PARA LOS TIEMPOS. HABLARLO CON ISAAC
+
+                        
                         ArrayList<PairVal> candidateList = graspSol.candidateList();
                         ArrayList<Integer> restCandidateList = new ArrayList<>();
                         float rclThresh = (float) (graspSol.minVal + Math.random() * (graspSol.maxVal - graspSol.minVal));
@@ -83,18 +92,30 @@ public class Main {
                             finalSol = graspSol;
                         instance.resetState(finalSol);
                     }
+                    double graspTime = (System.nanoTime() - constructedTime)/Math.pow(10,9);
+                    breakFor = graspTime >= 60;
+                    System.out.println(String.format("GRASP constructing time %f with value %d", graspTime, finalSol.solutionValue()));
+                    long innerInitTime = System.nanoTime();
                     // Fase de mejora
                     graspSol.removeUnnedeed();
                     Solution improvedSol = graspSol;
+                    double execTime = 0;
                     if (improvedSol.solutionValue() >= 2) {
                         Solution graspSolImproved = new FilterUnnecesaryNodes(graspSol, eval).bestSolutionFound;
                         LocalSearch ls = new LocalSearch(graspSolImproved, eval);
                         improvedSol = ls.bestSolutionFound;
+                        improvedSol.removeUnnedeed();
+                        long innerEndTime = System.nanoTime();
+                        execTime = (innerEndTime - innerInitTime)/Math.pow(10, 9);
+                        if(execTime >= 60) {
+                            breakFor = true;
+                        }
+
                     }
                     if (improvedSol.solutionValue() < bestValueFound) {
                         bestSolutionFound = improvedSol;
                         bestValueFound = improvedSol.solutionValue();
-                        System.out.println("Improved solution with value " + bestValueFound);
+                        System.out.println(String.format("Improved solution with value %d and time %f", bestValueFound, execTime));
                     }
                 }
                 long endTime = System.nanoTime();
