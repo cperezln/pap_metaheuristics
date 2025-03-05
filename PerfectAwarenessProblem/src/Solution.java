@@ -12,6 +12,7 @@ public class Solution {
     private int solutionValue = Integer.MAX_VALUE;
     // Diffusion parameters
     private int numberAware = 0;
+    private int[] awareNeighs;
 
     // GRASP parameters
     public float minVal = Float.MAX_VALUE;
@@ -114,11 +115,12 @@ public class Solution {
     }
 
     public int getAwareNeighs(int node) {
-        int numberOf = 0;
+        /*int numberOf = 0;
         for(int i: instance.graph.get(node)) {
             if(instance.getNodeState(i) >= 1) numberOf++;
         }
-        return numberOf;
+        return numberOf;*/
+        return awareNeighs[node];
     }
 
     public int getSpreaderNeighs(int node) {
@@ -127,6 +129,10 @@ public class Solution {
             if(instance.getNodeState(i) == 2) numberOf++;
         }
         return numberOf;
+    }
+
+    public void setAwareCount(int[] aware) {
+        this.awareNeighs = aware;
     }
 
     public void setAware(int nAware) { this.numberAware = nAware; }

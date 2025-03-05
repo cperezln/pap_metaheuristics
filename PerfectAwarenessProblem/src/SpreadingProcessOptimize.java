@@ -34,6 +34,8 @@ public class SpreadingProcessOptimize {
                 index = nextPossible.getLowestSetBit();
             } while (index != -1);
         }
+        BigInteger[] checkAware = checkSpreaders;
+        awareCount = spreaderCount;
         /*---------------------------------------------------*/
         BigInteger spreadersTaubw = sol.getBitwiseRepresentation();
         BigInteger qSpreaders = sol.getBitwiseRepresentation();
@@ -54,6 +56,11 @@ public class SpreadingProcessOptimize {
                         awareSize++;
                         this.instance.setState(neigh, 1);
                     }
+                    if(checkAware[node] == null) checkAware[node] = BigInteger.ZERO;
+                    if(!checkSpreaders[node].testBit(neigh)) {
+                        checkSpreaders[node] = checkSpreaders[node].setBit(neigh);
+                        spreaderCount[node]++;
+                    }
                     // The number of spreaders around neigh increments, as node is a spreader
                     if(checkSpreaders[neigh] == null) checkSpreaders[neigh] = BigInteger.ZERO;
                     if(!checkSpreaders[neigh].testBit(node)) {
@@ -69,6 +76,7 @@ public class SpreadingProcessOptimize {
             }
         }
         sol.setAware(awareSize);
+        sol.setAwareCount(awareCount);
         return awareSize == instance.getNumberNodes();
     }
 
