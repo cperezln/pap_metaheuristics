@@ -3,6 +3,7 @@ import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.util.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 
@@ -75,15 +76,97 @@ public class Main {
             problematicInstances.add(new File(pathInstances + "/65_99_1_social_0.in"));
             HashSet<String> probInstNames = new HashSet<>();
             for(File i: problematicInstances) probInstNames.add(i.getName());
-            File f = new File(pathSolutionsCheck);
-            File[] arr = f.listFiles();
-            for(File fi: arr) alreadyComputed.add(fi.getName().replace(".txt", ""));
             for (File i : dirInstances.listFiles()) {
-                if(alreadyComputed.contains(i.getName())) {
-                    System.out.println("ALREADY COMPUTED :P");
+                if(probInstNames.contains(i.getName())) {
                     continue;
                 }
-                if(probInstNames.contains(i.getName())) {
+                int nIterGrasp = 100;
+                Instance instance = new Instance(i, i.getName());
+                System.out.println(String.format("------------------------ INSTANCE %s ------------------------", i.getName()));
+                Solution bestSolutionFound = null;
+                int bestValueFound = Integer.MAX_VALUE;
+                long initTime = System.nanoTime();
+                boolean breakFor = false;
+                for (int j = 0; j < nIterGrasp; j++) {
+                    if(breakFor) break;
+                    SpreadingProcessOptimize eval = new SpreadingProcessOptimize(instance);
+                    Solution.instance = instance;
+                    // Fase constructiva
+                    Solution graspSol = new Solution();
+                    long constructedTime = System.nanoTime();
+                    if(probInstNames.contains(i.getName())) {
+                        continue;
+                        /*
+                        graspSol = Solution.GenerateDegreeGreedySolution(instance, eval);
+                        finalSol = graspSol;
+                        breakFor = true;
+
+                         */
+                    }
+                    else {
+                        while (!eval.isSolution(graspSol)) {
+                            ArrayList<PairVal> candidateList = graspSol.candidateList();
+                            ArrayList<Integer> restCandidateList = new ArrayList<>();
+                            float rclThresh = (float) (graspSol.minVal + Math.random() * (graspSol.maxVal - graspSol.minVal));
+                            for (PairVal pv : candidateList) {
+                                if (pv.val >= rclThresh) restCandidateList.add(pv.node);
+                            }
+                            int selectRand = (int) (Math.random() * restCandidateList.size());
+                            graspSol.addNode(restCandidateList.get(selectRand));
+                            instance.resetState(graspSol);
+                        }
+                    }
+                    double graspTime = (System.nanoTime() - constructedTime)/Math.pow(10,9);
+                    if((System.nanoTime() - initTime)/Math.pow(10, 9) >= 300) {
+                        breakFor = true;
+                        continue;
+                    }
+                    System.out.println(String.format("GRASP constructing time %f with value %d", graspTime, graspSol.solutionValue()));
+                    long innerInitTime = System.nanoTime();
+                    // Fase de mejora
+                    graspSol.removeUnnedeed();
+                    Solution improvedSol = graspSol;
+                    double execTime = 0;
+                    if (improvedSol.solutionValue() >= 2) {
+                        Solution graspSolImproved = new FilterUnnecesaryNodes(graspSol, eval).bestSolutionFound;
+                        LocalSearch ls = new LocalSearch(graspSolImproved, eval);
+                        improvedSol = ls.bestSolutionFound;
+                        improvedSol.removeUnnedeed();
+                        long innerEndTime = System.nanoTime();
+                        execTime = (innerEndTime - innerInitTime)/Math.pow(10, 9);
+                        if((System.nanoTime() - initTime)/Math.pow(10, 9) >= 300) {
+                            breakFor = true;
+                        }
+
+                    }
+                    if (improvedSol.solutionValue() < bestValueFound) {
+                        bestSolutionFound = improvedSol;
+                        bestValueFound = improvedSol.solutionValue();
+                        System.out.println(String.format("Improved solution with value %d and time %f", bestValueFound, execTime));
+                    }
+                }
+                long endTime = System.nanoTime();
+                String pathRandomSols = inPath + "/solutionsv3/grasp_solutions/";
+                PrintWriter writer = new PrintWriter(pathRandomSols + i.getName() + ".txt", "UTF-8");
+                if (bestSolutionFound == null) {
+                    System.out.println("No se ha encontrado solución con este método para la instancia " + i.getName());
+                    writer.println(i.getName().split("\\.")[0]);
+                    // Si no encontramos solución, usamos la solución trivial: semilla con todos los nodos del grafo
+                    writer.println(instance.getNumberNodes());
+                    writer.println(endTime - initTime);
+                    writer.close();
+                } else {
+                    System.out.println("Instancia " + i.getName() + " con valor de la FO " + bestSolutionFound.solutionValue() + " y con solución " + bestSolutionFound);
+                    writer.println(i.getName().split("\\.")[0]);
+                    writer.println(bestSolutionFound.solutionValue());
+                    writer.println(bestSolutionFound);
+                    writer.println(endTime - initTime);
+                    writer.close();
+                }
+            }
+            for (File i : problematicInstances) {
+                if(alreadyComputed.contains(i.getName())) {
+                    System.out.println("ALREADY COMPUTED :P");
                     continue;
                 }
                 int nIterGrasp = 100;
@@ -101,122 +184,23 @@ public class Main {
                     // Fase constructiva
                     Solution graspSol = new Solution();
                     long constructedTime = System.nanoTime();
-                    if(problematicInstances.contains(i.getName())) {
-                        continue;
-                        /*
-                        graspSol = Solution.GenerateDegreeGreedySolution(instance, eval);
-                        finalSol = graspSol;
-                        breakFor = true;
-
-                         */
-                    }
-                    else {
-                        while (!eval.isSolution(graspSol)) {
-                            // REVISAR UNA SOLUCIÓN PARECIDA A LA QUE TIENEN ELLOS PARA EL CANDIDATE LIST, PORQUE NO PUEDE SER QUE DEL ALGORITMO SE LLEVE LA MITAD DEL TIEMPO
-                            // DARLE UNA VUELTA A LAS APROXIMACIONES QUE MEJORAN EL ALPHA EN CADA ITERACIÓN, PUEDEN SER INTERESANTES
-                            // TAMBIÉN ES POSIBLE PLANTEAR LA ENCAPSULACIÓN DEL GRASP EN UN ITERATED GREEDY, PARA TENER LÍMITES PARA LOS TIEMPOS. HABLARLO CON ISAAC
-                            ArrayList<PairVal> candidateList = graspSol.candidateList();
-                            ArrayList<Integer> restCandidateList = new ArrayList<>();
-                            float rclThresh = (float) (graspSol.minVal + Math.random() * (graspSol.maxVal - graspSol.minVal));
-                            for (PairVal pv : candidateList) {
-                                if (pv.val >= rclThresh) restCandidateList.add(pv.node);
-                            }
-                            int selectRand = (int) (Math.random() * restCandidateList.size() + 0.5) % instance.getNumberNodes();
-                            graspSol.addNode(selectRand);
-                            if (finalSol == null || finalSol.solutionValue() > graspSol.solutionValue())
-                                finalSol = graspSol;
-                            instance.resetState(finalSol);
-                        }
-                    }
-                    double graspTime = (System.nanoTime() - constructedTime)/Math.pow(10,9);
-                    if((System.nanoTime() - initTime)/Math.pow(10, 9) >= 300) {
-                        breakFor = true;
-                        continue;
-                    }
-                    System.out.println(String.format("GRASP constructing time %f with value %d", graspTime, finalSol.solutionValue()));
-                    long innerInitTime = System.nanoTime();
-                    // Fase de mejora
-                    graspSol.removeUnnedeed();
-                    Solution improvedSol = graspSol;
-                    double execTime = 0;
-                    if (improvedSol.solutionValue() >= 2) {
-                        Solution graspSolImproved = new FilterUnnecesaryNodes(graspSol, eval).bestSolutionFound;
-                        LocalSearch ls = new LocalSearch(graspSolImproved, eval);
-                        improvedSol = ls.bestSolutionFound;
-                        improvedSol.removeUnnedeed();
-                        long innerEndTime = System.nanoTime();
-                        execTime = (innerEndTime - innerInitTime)/Math.pow(10, 9);
-                        if((System.nanoTime() - initTime)/Math.pow(10, 9) >= 300) {
-                            breakFor = true;
-                        }
-
-                    }
-                    if (improvedSol.solutionValue() < bestValueFound) {
-                        bestSolutionFound = improvedSol;
-                        bestValueFound = improvedSol.solutionValue();
-                        System.out.println(String.format("Improved solution with value %d and time %f", bestValueFound, execTime));
-                    }
-                }
-                long endTime = System.nanoTime();
-                String pathRandomSols = inPath + "/solutionsv2/grasp_solutions/";
-                PrintWriter writer = new PrintWriter(pathRandomSols + i.getName() + ".txt", "UTF-8");
-                if (bestSolutionFound == null) {
-                    System.out.println("No se ha encontrado solución con este método para la instancia " + i.getName());
-                    writer.println(i.getName().split("\\.")[0]);
-                    // Si no encontramos solución, usamos la solución trivial: semilla con todos los nodos del grafo
-                    writer.println(instance.getNumberNodes());
-                    writer.println(endTime - initTime);
-                    writer.close();
-                } else {
-                    System.out.println("Instancia " + i.getName() + " con valor de la FO " + bestSolutionFound.solutionValue() + " y con solución " + bestSolutionFound);
-                    writer.println(i.getName().split("\\.")[0]);
-                    writer.println(bestSolutionFound.solutionValue());
-                    writer.println(endTime - initTime);
-                    writer.close();
-                }
-            }
-            for (File i : problematicInstances) {
-                if(alreadyComputed.contains(i.getName())) {
-                    System.out.println("ALREADY COMPUTED :P");
-                    continue;
-                }
-                int nIterGrasp = 25;
-                Solution finalSol = null;
-                Instance instance = new Instance(i, i.getName());
-                System.out.println(String.format("------------------------ INSTANCE %s ------------------------", i.getName()));
-                Solution bestSolutionFound = null;
-                int bestValueFound = Integer.MAX_VALUE;
-                long initTime = System.nanoTime();
-                boolean breakFor = false;
-                for (int j = 0; j < nIterGrasp; j++) {
-                    if(breakFor) break;
-                    SpreadingProcessOptimize eval = new SpreadingProcessOptimize(instance);
-                    Solution.instance = instance;
-                    // Fase constructiva
-                    Solution graspSol = new Solution();
-                    long constructedTime = System.nanoTime();
                     while (!eval.isSolution(graspSol)) {
-                        // REVISAR UNA SOLUCIÓN PARECIDA A LA QUE TIENEN ELLOS PARA EL CANDIDATE LIST, PORQUE NO PUEDE SER QUE DEL ALGORITMO SE LLEVE LA MITAD DEL TIEMPO
-                        // DARLE UNA VUELTA A LAS APROXIMACIONES QUE MEJORAN EL ALPHA EN CADA ITERACIÓN, PUEDEN SER INTERESANTES
-                        // TAMBIÉN ES POSIBLE PLANTEAR LA ENCAPSULACIÓN DEL GRASP EN UN ITERATED GREEDY, PARA TENER LÍMITES PARA LOS TIEMPOS. HABLARLO CON ISAAC
                         ArrayList<PairVal> candidateList = graspSol.candidateList();
                         ArrayList<Integer> restCandidateList = new ArrayList<>();
                         float rclThresh = (float) (graspSol.minVal + Math.random() * (graspSol.maxVal - graspSol.minVal));
                         for (PairVal pv : candidateList) {
                             if (pv.val >= rclThresh) restCandidateList.add(pv.node);
                         }
-                        int selectRand = (int) (Math.random() * restCandidateList.size() + 0.5) % instance.getNumberNodes();
-                        graspSol.addNode(selectRand);
-                        if (finalSol == null || finalSol.solutionValue() > graspSol.solutionValue())
-                            finalSol = graspSol;
-                        instance.resetState(finalSol);
+                        int selectRand = (int) (Math.random() * restCandidateList.size());
+                        graspSol.addNode(restCandidateList.get(selectRand));
+                        instance.resetState(graspSol);
                     }
                     double graspTime = (System.nanoTime() - constructedTime)/Math.pow(10,9);
                     if((System.nanoTime() - initTime)/Math.pow(10, 9) >= 300) {
                         breakFor = true;
                         continue;
                     }
-                    System.out.println(String.format("GRASP constructing time %f with value %d", graspTime, finalSol.solutionValue()));
+                    System.out.println(String.format("GRASP constructing time %f with value %d", graspTime, graspSol.solutionValue()));
                     long innerInitTime = System.nanoTime();
                     // Fase de mejora
                     graspSol.removeUnnedeed();
@@ -241,7 +225,7 @@ public class Main {
                     }
                 }
                 long endTime = System.nanoTime();
-                String pathRandomSols = inPath + "/solutionsv2/grasp_solutions/";
+                String pathRandomSols = inPath + "/solutionsv3/grasp_solutions/";
                 PrintWriter writer = new PrintWriter(pathRandomSols + i.getName() + ".txt", "UTF-8");
                 if (bestSolutionFound == null) {
                     System.out.println("No se ha encontrado solución con este método para la instancia " + i.getName());
@@ -254,6 +238,7 @@ public class Main {
                     System.out.println("Instancia " + i.getName() + " con valor de la FO " + bestSolutionFound.solutionValue() + " y con solución " + bestSolutionFound);
                     writer.println(i.getName().split("\\.")[0]);
                     writer.println(bestSolutionFound.solutionValue());
+                    writer.println(bestSolutionFound);
                     writer.println(endTime - initTime);
                     writer.close();
                 }

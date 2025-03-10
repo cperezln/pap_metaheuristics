@@ -57,12 +57,14 @@ public class Solution {
     }
 
     public void addNode(int node) {
-        this.solutionBw = this.solutionBw.add(BigInteger.ONE.shiftLeft(node));
-        this.solutionValue = this.solutionBw.bitCount();
-        this.numberAware = this.solutionValue;
-        instance.setState(node, 2);
-        for(int neigh: instance.graph.get(node)) {
-            instance.setState(neigh, 1);
+        if(!this.isIn(node)) {
+            this.solutionBw = this.solutionBw.add(BigInteger.ONE.shiftLeft(node));
+            this.solutionValue = this.solutionBw.bitCount();
+            this.numberAware = this.solutionValue;
+            instance.setState(node, 2);
+            for (int neigh : instance.graph.get(node)) {
+                instance.setState(neigh, 1);
+            }
         }
     }
 
@@ -84,6 +86,8 @@ public class Solution {
     }
 
     public ArrayList<PairVal> candidateList() {
+        maxVal = Float.MIN_VALUE;
+        minVal = Float.MAX_VALUE;
         ArrayList<PairVal> al = new ArrayList<>();
         for (int j : instance.getNodes()) {
             if (!this.isIn(j)) {

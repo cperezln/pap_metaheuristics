@@ -57,9 +57,9 @@ public class SpreadingProcessOptimize {
                         this.instance.setState(neigh, 1);
                     }
                     if(checkAware[node] == null) checkAware[node] = BigInteger.ZERO;
-                    if(!checkSpreaders[node].testBit(neigh)) {
-                        checkSpreaders[node] = checkSpreaders[node].setBit(neigh);
-                        spreaderCount[node]++;
+                    if(!checkAware[node].testBit(neigh)) {
+                        checkAware[node] = checkAware[node].setBit(neigh);
+                        awareCount[node]++;
                     }
                     // The number of spreaders around neigh increments, as node is a spreader
                     if(checkSpreaders[neigh] == null) checkSpreaders[neigh] = BigInteger.ZERO;
