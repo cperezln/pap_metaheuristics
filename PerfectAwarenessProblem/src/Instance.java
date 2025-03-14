@@ -1,10 +1,8 @@
 import java.io.FileNotFoundException;
 import java.lang.reflect.Array;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.io.File;
-import java.util.Scanner;
 
 public class Instance {
     public String name;
@@ -13,6 +11,7 @@ public class Instance {
     private HashMap<Integer, Integer> degreeMap = new HashMap<>();
     private HashMap<Integer, Float> centrality = new HashMap<>();
     private HashMap<Integer, Integer> state = new HashMap<>(); // 0: ignorant, 1: aware, 2: spreader
+    private HashSet<Integer> leafNodes = new HashSet<>();
     private int seed, k;
     HashMap<Integer, ArrayList<Integer>> graph = new HashMap<>();
 
@@ -47,6 +46,7 @@ public class Instance {
                     state.put(edge[1], 0);
                 }
             }
+            this.setLeafNodes();
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -61,6 +61,11 @@ public class Instance {
         return new ArrayList<Integer>(this.graph.keySet());
     }
 
+    public void setLeafNodes() {
+        for(Map.Entry<Integer, Integer> entry: degreeMap.entrySet()) {
+            if(entry.getValue() == 1) this.leafNodes.add(entry.getKey());
+        }
+    }
     public float getCentrality(int n) { return centrality.get(n); }
 
     public int getGreatestDegree() {
