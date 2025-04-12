@@ -5,13 +5,16 @@ import java.util.*;
 import java.io.File;
 
 public class Instance {
+    static float betFact;
+    static float degFact;
+    static float eigFact;
     public String name;
     private int numberNodes;
     private int numberEdges;
     private HashMap<Integer, Integer> degreeMap = new HashMap<>();
     private HashMap<Integer, Float> centrality = new HashMap<>();
     private HashMap<Integer, Integer> state = new HashMap<>(); // 0: ignorant, 1: aware, 2: spreader
-    private HashSet<Integer> leafNodes = new HashSet<>();
+    HashSet<Integer> leafNodes = new HashSet<>();
     private int seed, k;
     HashMap<Integer, ArrayList<Integer>> graph = new HashMap<>();
 
@@ -77,9 +80,27 @@ public class Instance {
         String inPath = "/home/cristian/Escritorio/TFM/to_send/centralities/";
         HashMap<Integer, Float> bw = new HashMap<>();
         Scanner reader2 = new Scanner(new File(inPath + "betweeness/" + file));
+        HashMap<Integer, Float> betMap = new HashMap<>();
+        HashMap<Integer, Float> degMap = new HashMap<>();
+        HashMap<Integer, Float> eigMap = new HashMap<>();
         while (reader2.hasNext()) {
             String[] line = reader2.nextLine().split(" ");
-            this.centrality.put(Integer.parseInt(line[0]), Float.parseFloat(line[1]));
+            betMap.put(Integer.parseInt(line[0]), Float.parseFloat(line[1]));
+        }
+        reader2 = new Scanner(new File(inPath + "degree/" + file));
+        while (reader2.hasNext()) {
+            String[] line = reader2.nextLine().split(" ");
+            degMap.put(Integer.parseInt(line[0]), Float.parseFloat(line[1]));
+        }
+        reader2 = new Scanner(new File(inPath + "eigenvector/" + file));
+        while (reader2.hasNext()) {
+            String[] line = reader2.nextLine().split(" ");
+            eigMap.put(Integer.parseInt(line[0]), Float.parseFloat(line[1]));
+        }
+        for(Map.Entry<Integer, Float> i: degMap.entrySet()) {
+            float numer = i.getValue()*degFact + betMap.get(i.getKey())*betFact + eigMap.get(i.getKey())*eigFact;
+            float denom = degFact + betFact + eigFact;
+            this.centrality.put(i.getKey(), (numer)/(denom));
         }
     }
 

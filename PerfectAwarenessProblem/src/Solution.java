@@ -2,6 +2,8 @@ import java.math.BigInteger;
 import java.util.*;
 
 public class Solution {
+    //
+    static float awareFactor;
     // In this works, solutions are composed as a number of nodes
     // Static (general) parameters
     public static Instance instance;
@@ -91,7 +93,8 @@ public class Solution {
         ArrayList<PairVal> al = new ArrayList<>();
         for (int j : instance.getNodes()) {
             if (!this.isIn(j)) {
-                float nodeValue = instance.getCentrality(j)*(instance.graph.get(j).size() - getAwareNeighs(j));
+                float awareFactorLoc = awareFactor*(instance.graph.get(j).size() - getAwareNeighs(j));
+                float nodeValue = instance.getCentrality(j)*awareFactorLoc;
                 if(nodeValue > maxVal) maxVal = nodeValue;
                 if(nodeValue < minVal) minVal = nodeValue;
                 al.add(new PairVal(j, nodeValue));
