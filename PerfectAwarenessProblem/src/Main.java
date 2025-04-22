@@ -30,7 +30,7 @@ public class Main {
         for (int j = 0; j < nIterGrasp; j++) {
             SpreadingProcessOptimize eval = new SpreadingProcessOptimize(instance);
             Solution.instance = instance;
-            Solution.awareFactor = aware_factor;
+            Solution.awareFactor =      aware_factor;
             // Fase constructiva
             Solution graspSol = new Solution();
             while (!eval.isSolution(graspSol)) {
@@ -66,12 +66,8 @@ public class Main {
                 bestValueFound = improvedSol.solutionValue();
             }
         }
-        if((System.nanoTime() - initTime) / Math.pow(10, 9) > 310) {
-            System.out.println(Float.MAX_VALUE);
-        }
-        else {
-            System.out.println(bestSolutionFound.solutionValue());
-        }
+        System.out.println(bestSolutionFound.solutionValue());
+
     }
 
 }
