@@ -12,17 +12,17 @@ public class Main {
         float deg_factor = Float.parseFloat(args[4]);
         float eig_factor = Float.parseFloat(args[5]);
         float aware_factor = Float.parseFloat(args[6]);
-        String leafS = args[7];
-        boolean leaf = false;
-        if (leafS.equals("1")) {
+        //String leafS = args[7];
+        boolean leaf = true;
+        if (false) {
             leaf = true;
         }
         File i = new File(path);
         // Ejecución del GRASP
         int nIterGrasp = paramIter;
-        Instance.betFact = bet_fact;
-        Instance.degFact = deg_factor;
-        Instance.eigFact = eig_factor;
+        Solution.betFactor = bet_fact;
+        Solution.degFactor = deg_factor;
+        Solution.eigFactor = eig_factor;
         Instance instance = new Instance(i, i.getName());
         Solution bestSolutionFound = null;
         int bestValueFound = Integer.MAX_VALUE;

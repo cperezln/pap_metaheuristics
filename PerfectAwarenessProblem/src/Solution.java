@@ -4,6 +4,9 @@ import java.util.*;
 public class Solution {
     //
     static float awareFactor;
+    static float betFactor;
+    static float degFactor;
+    static float eigFactor;
     // In this works, solutions are composed as a number of nodes
     // Static (general) parameters
     public static Instance instance;
@@ -93,8 +96,9 @@ public class Solution {
         ArrayList<PairVal> al = new ArrayList<>();
         for (int j : instance.getNodes()) {
             if (!this.isIn(j)) {
-                float awareFactorLoc = awareFactor*(instance.graph.get(j).size() - getAwareNeighs(j));
-                float nodeValue = instance.getCentrality(j)*awareFactorLoc;
+                float awareValue = (float) (instance.graph.get(j).size() - getAwareNeighs(j)) / instance.graph.get(j).size();
+                float[] cen = instance.getCentrality(j);
+                float nodeValue = (betFactor*cen[0] + degFactor*cen[1] + eigFactor*cen[2] + awareFactor*awareValue)/(betFactor + degFactor + eigFactor + awareValue);
                 if(nodeValue > maxVal) maxVal = nodeValue;
                 if(nodeValue < minVal) minVal = nodeValue;
                 al.add(new PairVal(j, nodeValue));
@@ -148,32 +152,4 @@ public class Solution {
 
     // STATIC METHODS
 
-    public static Solution GenerateDegreeGreedySolution(Instance instance, SpreadingProcessOptimize eval) {
-        Solution sol = new Solution();
-        BigInteger posSol = BigInteger.ZERO;
-        HashSet<Integer> inSolution = new HashSet<>();
-        int[] spreadersCount = new int[instance.getNumberNodes()];
-        int[] awareCount = new int[instance.getNumberNodes()];
-        int awareSize = 0;
-        eval.isSolution(sol);
-        while (true) {
-            int selectedNode = -1;
-            double bestValue = Integer.MIN_VALUE;
-
-            for (Integer j : instance.graph.keySet()) {
-                if (Math.max(instance.getCentrality(j), 0.005)*Math.max(instance.graph.get(j).size() - sol.getAwareNeighs(j), 1) > bestValue && !sol.isIn(j)) {
-                    selectedNode = j;
-                    bestValue = Math.max(instance.getCentrality(j), 0.005)*Math.max(instance.graph.get(j).size() - sol.getAwareNeighs(j), 1);
-                }
-            }
-            if (selectedNode != -1) {
-                sol.addNode(selectedNode);
-            }
-            instance.resetState(sol);
-            if (eval.isSolution(sol)) {
-                break;
-            }
-        }
-        return sol;
-    }
 }

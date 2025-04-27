@@ -12,7 +12,7 @@ public class Instance {
     private int numberNodes;
     private int numberEdges;
     private HashMap<Integer, Integer> degreeMap = new HashMap<>();
-    private HashMap<Integer, Float> centrality = new HashMap<>();
+    private HashMap<Integer, float[]> centrality = new HashMap<>();
     private HashMap<Integer, Integer> state = new HashMap<>(); // 0: ignorant, 1: aware, 2: spreader
     HashSet<Integer> leafNodes = new HashSet<>();
     private int seed, k;
@@ -41,8 +41,6 @@ public class Instance {
                     }
                     degreeMap.put(edge[0], degreeMap.getOrDefault(edge[0], Integer.valueOf(0)) + 1);
                     degreeMap.put(edge[1], degreeMap.getOrDefault(edge[1], Integer.valueOf(0)) + 1);
-                    centrality.put(edge[0], centrality.getOrDefault(edge[0], Float.valueOf(0)) + 1);
-                    centrality.put(edge[1], centrality.getOrDefault(edge[1], Float.valueOf(0)) + 1);
                     graph.put(edge[0], edgeListStart);
                     graph.put(edge[1], edgeListEnd);
                     state.put(edge[0], 0);
@@ -69,7 +67,7 @@ public class Instance {
             if(entry.getValue() == 1) this.leafNodes.add(entry.getKey());
         }
     }
-    public float getCentrality(int n) { return centrality.get(n); }
+    public float[] getCentrality(int n) { return centrality.get(n); }
 
     public int getGreatestDegree() {
         int maxDeg = 0;
@@ -98,9 +96,11 @@ public class Instance {
             eigMap.put(Integer.parseInt(line[0]), Float.parseFloat(line[1]));
         }
         for(Map.Entry<Integer, Float> i: degMap.entrySet()) {
-            float numer = i.getValue()*degFact + betMap.get(i.getKey())*betFact + eigMap.get(i.getKey())*eigFact;
-            float denom = degFact + betFact + eigFact;
-            this.centrality.put(i.getKey(), (numer)/(denom));
+            float betCet = betMap.get(i.getKey());
+            float eigCet = eigMap.get(i.getKey());
+            float degCet = i.getValue();
+            float[] arrCet = {betCet, degCet, eigCet};
+            this.centrality.put(i.getKey(), arrCet);
         }
     }
 
