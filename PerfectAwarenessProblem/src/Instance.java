@@ -9,7 +9,7 @@ public class Instance {
     private int numberNodes;
     private int numberEdges;
     private HashMap<Integer, Integer> degreeMap = new HashMap<>();
-    private HashMap<Integer, Float> centrality = new HashMap<>();
+    private HashMap<Integer, double[]> centrality = new HashMap<>();
     private HashMap<Integer, Integer> state = new HashMap<>(); // 0: ignorant, 1: aware, 2: spreader
     private HashSet<Integer> leafNodes = new HashSet<>();
     private int seed, k;
@@ -38,8 +38,6 @@ public class Instance {
                     }
                     degreeMap.put(edge[0], degreeMap.getOrDefault(edge[0], Integer.valueOf(0)) + 1);
                     degreeMap.put(edge[1], degreeMap.getOrDefault(edge[1], Integer.valueOf(0)) + 1);
-                    centrality.put(edge[0], centrality.getOrDefault(edge[0], Float.valueOf(0)) + 1);
-                    centrality.put(edge[1], centrality.getOrDefault(edge[1], Float.valueOf(0)) + 1);
                     graph.put(edge[0], edgeListStart);
                     graph.put(edge[1], edgeListEnd);
                     state.put(edge[0], 0);
@@ -66,7 +64,7 @@ public class Instance {
             if(entry.getValue() == 1) this.leafNodes.add(entry.getKey());
         }
     }
-    public float getCentrality(int n) { return centrality.get(n); }
+    public double[] getCentrality(int n) { return centrality.get(n); }
 
     public int getGreatestDegree() {
         int maxDeg = 0;
@@ -74,12 +72,32 @@ public class Instance {
         return maxDeg;
     }
     public void setCentrality(String file) throws FileNotFoundException {
-        String inPath = "/home/cristian/Escritorio/TFM/to_send/centralities/";
-        HashMap<Integer, Float> bw = new HashMap<>();
+        String inPath = "/home/cristian/Escritorio/TFM/pap_metaheuristics//centralities/";
+        HashMap<Integer, Double> bw = new HashMap<>();
         Scanner reader2 = new Scanner(new File(inPath + "betweeness/" + file));
+        HashMap<Integer, Double> betMap = new HashMap<>();
+        HashMap<Integer, Double> degMap = new HashMap<>();
+        HashMap<Integer, Double> eigMap = new HashMap<>();
         while (reader2.hasNext()) {
             String[] line = reader2.nextLine().split(" ");
-            this.centrality.put(Integer.parseInt(line[0]), Float.parseFloat(line[1]));
+            betMap.put(Integer.parseInt(line[0]), Double.parseDouble(line[1]));
+        }
+        reader2 = new Scanner(new File(inPath + "degree/" + file));
+        while (reader2.hasNext()) {
+            String[] line = reader2.nextLine().split(" ");
+            degMap.put(Integer.parseInt(line[0]), Double.parseDouble(line[1]));
+        }
+        reader2 = new Scanner(new File(inPath + "eigenvector/" + file));
+        while (reader2.hasNext()) {
+            String[] line = reader2.nextLine().split(" ");
+            eigMap.put(Integer.parseInt(line[0]), Double.parseDouble(line[1]));
+        }
+        for(Map.Entry<Integer, Double> i: degMap.entrySet()) {
+            double betCet = betMap.get(i.getKey());
+            double eigCet = eigMap.get(i.getKey());
+            double degCet = i.getValue();
+            double[] arrCet = {betCet, degCet, eigCet};
+            this.centrality.put(i.getKey(), arrCet);
         }
     }
 

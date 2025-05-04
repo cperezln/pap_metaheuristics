@@ -4,19 +4,22 @@ import java.util.*;
 public class Solution {
     // In this works, solutions are composed as a number of nodes
     // Static (general) parameters
+    public static double awareFactor;
+    public static double betFactor;
+    public static double degFactor;
+    public static double eigFactor;
     public static Instance instance;
     // Structure - related parameters
     private BigInteger solutionBw;
     // Metrics parameters
-    private int cumCentrality = 0;
     private int solutionValue = Integer.MAX_VALUE;
     // Diffusion parameters
     private int numberAware = 0;
     private int[] awareNeighs;
 
     // GRASP parameters
-    public float minVal = Float.MAX_VALUE;
-    public float maxVal = Float.MIN_VALUE;
+    public double minVal = Double.MAX_VALUE;
+    public double maxVal = Double.MIN_VALUE;
 
 
     public Solution(BigInteger solution) {
@@ -86,12 +89,20 @@ public class Solution {
     }
 
     public ArrayList<PairVal> candidateList() {
-        maxVal = Float.MIN_VALUE;
-        minVal = Float.MAX_VALUE;
+        maxVal = Double.MIN_VALUE;
+        minVal = Double.MAX_VALUE;
         ArrayList<PairVal> al = new ArrayList<>();
         for (int j : instance.getNodes()) {
             if (!this.isIn(j)) {
-                float nodeValue = instance.getCentrality(j)*(instance.graph.get(j).size() - getAwareNeighs(j));
+                double awareValue = (double) (instance.graph.get(j).size() - getAwareNeighs(j)) / instance.graph.get(j).size();
+                double nodeValue = 0;
+                if(awareValue == 0) {
+                    nodeValue = 0;
+                }
+                else {
+                    double[] cen = instance.getCentrality(j);
+                    nodeValue = awareValue*(betFactor * cen[0] + degFactor * cen[1] + eigFactor * cen[2]) / (betFactor + degFactor + eigFactor);
+                }
                 if(nodeValue > maxVal) maxVal = nodeValue;
                 if(nodeValue < minVal) minVal = nodeValue;
                 al.add(new PairVal(j, nodeValue));
@@ -145,32 +156,4 @@ public class Solution {
 
     // STATIC METHODS
 
-    public static Solution GenerateDegreeGreedySolution(Instance instance, SpreadingProcessOptimize eval) {
-        Solution sol = new Solution();
-        BigInteger posSol = BigInteger.ZERO;
-        HashSet<Integer> inSolution = new HashSet<>();
-        int[] spreadersCount = new int[instance.getNumberNodes()];
-        int[] awareCount = new int[instance.getNumberNodes()];
-        int awareSize = 0;
-        eval.isSolution(sol);
-        while (true) {
-            int selectedNode = -1;
-            double bestValue = Integer.MIN_VALUE;
-
-            for (Integer j : instance.graph.keySet()) {
-                if (Math.max(instance.getCentrality(j), 0.005)*Math.max(instance.graph.get(j).size() - sol.getAwareNeighs(j), 1) > bestValue && !sol.isIn(j)) {
-                    selectedNode = j;
-                    bestValue = Math.max(instance.getCentrality(j), 0.005)*Math.max(instance.graph.get(j).size() - sol.getAwareNeighs(j), 1);
-                }
-            }
-            if (selectedNode != -1) {
-                sol.addNode(selectedNode);
-            }
-            instance.resetState(sol);
-            if (eval.isSolution(sol)) {
-                break;
-            }
-        }
-        return sol;
-    }
 }
