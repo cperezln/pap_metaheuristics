@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.util.*;
 import java.io.File;
 
+
 public class Instance {
     public String name;
     private int numberNodes;
@@ -15,6 +16,90 @@ public class Instance {
     private int seed, k;
     HashMap<Integer, ArrayList<Integer>> graph = new HashMap<>();
 
+    private static ArrayList<int[]> preprocessing(ArrayList<int[]> arr, int numberNodes) {
+        HashMap<Integer, ArrayList<Integer>> localGraph = new HashMap<>();
+        HashMap<Integer, Integer> localDegreeMap = new HashMap<>();
+        int lastNodeLabel = 0;
+        int[] mapLabels = new int[numberNodes];
+        Arrays.fill(mapLabels, -1);
+        for (int i = 0; i < arr.size(); i++) {
+            int[] edge = arr.get(i);
+            if (edge[0] != edge[1]) {
+                ArrayList<Integer> edgeListStart = localGraph.getOrDefault(edge[0], new ArrayList<>());
+                ArrayList<Integer> edgeListEnd = localGraph.getOrDefault(edge[1], new ArrayList<>());
+                if (!edgeListStart.contains(edge[1])) {
+                    edgeListStart.add(edge[1]);
+                }
+                if (!edgeListEnd.contains(edge[0])) {
+                    edgeListEnd.add(edge[0]);
+                }
+                localDegreeMap.put(edge[0], localDegreeMap.getOrDefault(edge[0], Integer.valueOf(0)) + 1);
+                localDegreeMap.put(edge[1], localDegreeMap.getOrDefault(edge[1], Integer.valueOf(0)) + 1);
+                localGraph.put(edge[0], edgeListStart);
+                localGraph.put(edge[1], edgeListEnd);
+            }
+        }
+        for(int i = 0; i < arr.size(); i++) {
+            int[] edge = arr.get(i);
+            if (edge[0] != edge[1]) {
+                if (localDegreeMap.get(edge[0]) == 2 || localDegreeMap.get(edge[1]) == 2) {
+                    if(mapLabels[edge[0]] != -1 && mapLabels[edge[1]] == -1) {
+                        mapLabels[edge[1]] = mapLabels[edge[0]];
+                    }
+                    else if(mapLabels[edge[0]] == -1 && mapLabels[edge[1]] != -1) {
+                        mapLabels[edge[0]] = mapLabels[edge[1]];
+                    }
+                    else if(mapLabels[edge[0]] == -1 && mapLabels[edge[1]] == -1) {
+                        mapLabels[edge[0]] = lastNodeLabel;
+                        mapLabels[edge[1]] = lastNodeLabel;
+                        lastNodeLabel++;
+                    }
+                    else {
+                        int firstLabel = mapLabels[edge[0]];
+                        int secondLabel = mapLabels[edge[1]];
+                        for(int j = 0; j < mapLabels.length; j++){
+                            if(mapLabels[j] == firstLabel || mapLabels[j] == secondLabel) {
+                                mapLabels[j] = lastNodeLabel;
+                            }
+                        }
+                        mapLabels[edge[0]] = lastNodeLabel;
+                        mapLabels[edge[1]] = lastNodeLabel;
+                        lastNodeLabel++;
+                    }
+                } else {
+                    if(mapLabels[edge[0]] == -1) {
+                        mapLabels[edge[0]] = lastNodeLabel;
+                        lastNodeLabel++;
+                    }
+                    if(mapLabels[edge[1]] == -1) {
+                    mapLabels[edge[1]] = lastNodeLabel;
+                    lastNodeLabel++;
+                    }
+                }
+            }
+        }
+        ArrayList<int[]> newEdges = new ArrayList<>();
+        HashMap<Integer, Integer> finalLabels = new HashMap<>();
+        int lastAvailableNode = 0;
+        for(int i = 0; i < arr.size(); i++) {
+            int[] edge = arr.get(i);
+            if(mapLabels[edge[0]] != mapLabels[edge[1]]) {
+                if(!finalLabels.containsKey(mapLabels[edge[0]])) {
+                    finalLabels.put(mapLabels[edge[0]], lastAvailableNode);
+                    lastAvailableNode++;
+                }
+                if(!finalLabels.containsKey(mapLabels[edge[1]])) {
+                    finalLabels.put(mapLabels[edge[1]], lastAvailableNode);
+                    lastAvailableNode++;
+                }
+                int[] newEdge = {finalLabels.get(mapLabels[edge[0]]), finalLabels.get(mapLabels[edge[1]])};
+                newEdges.add(newEdge);
+            }
+        }
+
+        return newEdges;
+    }
+
     public Instance(File file, String c) {
         try {
             this.setCentrality(c);
@@ -24,9 +109,15 @@ public class Instance {
             numberNodes = Integer.parseInt(reader.nextLine());
             numberEdges = Integer.parseInt(reader.nextLine());
             name = file.getName();
+            ArrayList<int[]> edgeList = new ArrayList<>();
+            // Preprocesado para estudiar los nodos que pueden colapsarse, siguiendo la filosofía del estado del arte
             for(int i = 0; i < numberEdges; i++) {
                 String[] sEdge = reader.nextLine().split(" ");
                 int[] edge = {Integer.parseInt(sEdge[0]), Integer.parseInt(sEdge[1])};
+                edgeList.add(edge);
+            }
+            ArrayList<int[]> newEdges = preprocessing(edgeList, numberNodes);
+            for(int[] edge: newEdges) {
                 if(edge[0] != edge[1]) {
                     ArrayList<Integer> edgeListStart = graph.getOrDefault(edge[0], new ArrayList<>());
                     ArrayList<Integer> edgeListEnd = graph.getOrDefault(edge[1], new ArrayList<>());
@@ -71,6 +162,7 @@ public class Instance {
         for(int node = 0; node < numberNodes; node++) if(maxDeg < degreeMap.get(node)) maxDeg = degreeMap.get(node);
         return maxDeg;
     }
+
     public void setCentrality(String file) throws FileNotFoundException {
         String inPath = "/home/cristian/Escritorio/TFM/pap_metaheuristics//centralities/";
         HashMap<Integer, Double> bw = new HashMap<>();
@@ -128,6 +220,8 @@ public class Instance {
     }
 
     public int getNodeState(int node) { return this.state.get(node); }
+
+    public boolean isLeaf(int node) { return this.leafNodes.contains(node);}
 
 
 }

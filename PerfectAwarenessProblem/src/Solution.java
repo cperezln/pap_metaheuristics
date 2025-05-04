@@ -93,7 +93,7 @@ public class Solution {
         minVal = Double.MAX_VALUE;
         ArrayList<PairVal> al = new ArrayList<>();
         for (int j : instance.getNodes()) {
-            if (!this.isIn(j)) {
+            if (!this.isIn(j) && !instance.isLeaf(j)) {
                 double awareValue = (double) (instance.graph.get(j).size() - getAwareNeighs(j)) / instance.graph.get(j).size();
                 double nodeValue = 0;
                 if(awareValue == 0) {

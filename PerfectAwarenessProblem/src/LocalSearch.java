@@ -5,7 +5,6 @@ public class LocalSearch {
     Solution bestSolutionFound;
 
     public LocalSearch(Solution solution, SpreadingProcessOptimize e) {
-        // TODO evaluar si separar en varias búsquedas locales: una que sea best, una que sea first, una que sea mixta (como esta)
         // Definimos la búsqueda local con el esquema habitual
         this.bestSolutionFound = solution;
         boolean improved = true;

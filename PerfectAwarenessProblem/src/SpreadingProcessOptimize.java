@@ -11,7 +11,6 @@ public class SpreadingProcessOptimize {
         this.instance = i;
     }
 
-    // TODO sería interesante darle una vuelta a esta forma de estudiar si la solución es solución, efectivamente.
 
     public boolean isSolution(Solution sol) {
         int[] spreaderCount = new int[instance.getNumberNodes()];  // Para llevar la cuenta de vecinos propagadores
