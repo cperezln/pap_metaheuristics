@@ -1,5 +1,6 @@
 import os
 import time
+import matplotlib.pyplot as plt
 
 from gurobipy import *
 import networkx as nx
@@ -38,13 +39,16 @@ def model_n2(G):
         print("Computed solution seed set: ", computed_seed_set)
         print("Computed solution value: ", computed_solution_value)
     except GurobiError as e:
+        print(f"Gurobi status {model.Status}. Model errored.")
         problematic_instances.append(path_problem)
         # print('Error code ' + str(e.errno) + ': ' + str(e))
         # print("Try with academic license")
 
+
 dir = "/home/cristian/Escritorio/TFM/pap_metaheuristics/previous_work/instances/"
 problematic_instances = []
 for file in os.listdir(dir):
+    file = "10_9_1_social_0.in"
     path_problem = "{}/{}".format(dir, file)
     f = open(path_problem, "r")
     f.readline(); f.readline()
