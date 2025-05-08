@@ -18,7 +18,6 @@ public class GRASP {
 
     public Solution constructivePhase() {
         Solution graspSol = new Solution();
-        Instant consStart = Instant.now();
 
         while (!eval.isSolution(graspSol)) {
             ArrayList<PairVal> candidateList = graspSol.candidateList();
@@ -28,17 +27,10 @@ public class GRASP {
                 if (pv.val >= rclThresh) restCandidateList.add(pv.node);
             }
             int selectRand = (int) (Math.random() * restCandidateList.size());
-            try {
-                graspSol.addNode(restCandidateList.get(selectRand));
-            }
-            catch (Exception e){
-                System.out.println("nani");
-            }
+            graspSol.addNode(restCandidateList.get(selectRand));
             instance.resetState(graspSol);
         }
 
-        double graspTime = (Duration.between(consStart, Instant.now())).toMillis();
-        System.out.println(String.format("GRASP constructing time %f with value %d", graspTime, graspSol.solutionValue()));
         return graspSol;
     }
 
@@ -75,10 +67,8 @@ public class GRASP {
             if (improvedSol.solutionValue() < bestValueFound) {
                 bestSolutionFound = improvedSol;
                 bestValueFound = improvedSol.solutionValue();
-                System.out.println(String.format("Improved solution with value %d and time %f", bestValueFound, execTime));
             }
         }
-        System.out.println("TIME RUNNING " + Duration.between(start, Instant.now()).toMillis());
         return bestSolutionFound;
     }
 }

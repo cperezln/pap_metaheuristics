@@ -48,7 +48,6 @@ public class LocalSearch {
                         if(e.isSolution(finalSol)) {
                             Solution neighbor = new FilterUnnecesaryNodes(finalSol, e).bestSolutionFound;
                             if (neighbor.solutionValue() < this.bestSolutionFound.solutionValue()) {
-                                // System.out.println("Iteraciones para mejorar " + iter + " con resultado de FO " + neighbor.solutionValue());
                                 this.bestSolutionFound = neighbor;
                                 improved = true;
                             }
