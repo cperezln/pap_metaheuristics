@@ -29,11 +29,15 @@ public class LocalSearch {
                 int iter = 0;
                 BigInteger nextPossibleI = solution.getBitwiseRepresentation();
                 int indexI = nextPossibleI.getLowestSetBit();
-                while (indexI != -1) {
+                while (indexI != -1 && !timeLimit) {
                     if (improved) break;
+                    if(Duration.between(initTime, Instant.now()).toMillis() >= 300000) {
+                        timeLimit = true;
+                        break;
+                    }
                     BigInteger nextPossibleJ = nextPossibleI.xor(BigInteger.ONE.shiftLeft(indexI));
                     int indexJ = nextPossibleJ.getLowestSetBit();
-                    while (indexJ != -1) {
+                    while (indexJ != -1 && !timeLimit) {
                         if(improved) break;
                         if(Duration.between(initTime, Instant.now()).toMillis() >= 300000) {
                             timeLimit = true;

@@ -166,7 +166,7 @@ public class Instance {
     }
 
     public void setCentrality(String file) throws FileNotFoundException {
-        String inPath = "/home/cristian/Escritorio/TFM/pap_metaheuristics//centralities/";
+        String inPath = "/home/cristian/Escritorio/TFM/to_send/centralities/";
         HashMap<Integer, Double> bw = new HashMap<>();
         Scanner reader2 = new Scanner(new File(inPath + "betweeness/" + file));
         HashMap<Integer, Double> betMap = new HashMap<>();
