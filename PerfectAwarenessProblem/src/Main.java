@@ -1,73 +1,76 @@
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.*;
 import java.util.ArrayList;
+import java.util.HashSet;
+
+class PairVal implements Comparable<PairVal>{
+    int node;
+    double val;
+    public PairVal(int node, double val){
+        this.node = node;
+        this.val = val;
+    }
+
+
+    @Override
+    public int compareTo(PairVal o) {
+        if(o.val - this.val < 0) return -1;
+        else return 1;
+    }
+}
 
 public class Main {
     public static void main(String[] args) throws FileNotFoundException, UnsupportedEncodingException {
-        String path = args[0];
-        float param_alpha = Float.parseFloat(args[1]);
-        int paramIter = Integer.parseInt(args[2]);
-        float bet_fact = Float.parseFloat(args[3]);
-        float deg_factor = Float.parseFloat(args[4]);
-        float eig_factor = Float.parseFloat(args[5]);
-        float aware_factor = Float.parseFloat(args[6]);
-        //String leafS = args[7];
-        boolean leaf = true;
-        if (false) {
-            leaf = true;
+        String inPath = args[0];
+        System.out.println("Path para guardar los resultados " + inPath);
+
+        String pathInstances = inPath + "/previous_work/instances";
+        String pathSolutions = inPath + "/previous_work/solutions";
+        File dirInstances = new File(pathInstances);
+
+        // Best params IRACE
+        double paramAlpha = 0.6725;
+        int graspIters = 72;
+        double betcent = 0.4636;
+        double degcent = 0.0043;
+        double eigcent = 0.9650;
+        double awareFact = 0.7777;
+
+        File[] dirSolved = new File(inPath + "/solutionsv6/grasp_solutions").listFiles();
+        ArrayList<String> namesFiles = new ArrayList<>();
+        for(File i: dirSolved) {
+            namesFiles.add(i.getName().replace(".txt", ""));
         }
-        File i = new File(path);
-        // Ejecución del GRASP
-        int nIterGrasp = paramIter;
-        Solution.betFactor = bet_fact;
-        Solution.degFactor = deg_factor;
-        Solution.eigFactor = eig_factor;
-        Instance instance = new Instance(i, i.getName());
-        Solution bestSolutionFound = null;
-        int bestValueFound = Integer.MAX_VALUE;
-        long initTime = System.nanoTime();
-        for (int j = 0; j < nIterGrasp; j++) {
+        HashSet<String> solved = new HashSet<>(namesFiles);
+        for (File i : dirInstances.listFiles()) {
+            if(solved.contains(i.getName())) {
+                System.out.println("Computed");
+               continue;
+            }
+            // i = new File(pathInstances + "/10_9_1_social_0.in");
+            int nIterGrasp = graspIters;
+            Solution.awareFactor = awareFact;
+            Solution.betFactor = betcent;
+            Solution.degFactor = degcent;
+            Solution.eigFactor = eigcent;
+            Instance instance = new Instance(i, i.getName());
             SpreadingProcessOptimize eval = new SpreadingProcessOptimize(instance);
             Solution.instance = instance;
-            Solution.awareFactor =      aware_factor;
-            // Fase constructiva
-            Solution graspSol = new Solution();
-            while (!eval.isSolution(graspSol)) {
-                ArrayList<PairVal> candidateList = graspSol.candidateList();
-                ArrayList<Integer> restCandidateList = new ArrayList<>();
-                float rclThresh = (float) (graspSol.minVal + param_alpha * (graspSol.maxVal - graspSol.minVal));
-                for (PairVal pv : candidateList) {
-                    if (pv.val >= rclThresh) {
-                        if(leaf && instance.leafNodes.contains(pv.node)) {
-                            continue;
-                        }
-                        else {
-                            restCandidateList.add(pv.node);
-                        }
-                    }
-                }
-                int selectRand = (int) (Math.random() * restCandidateList.size());
-                graspSol.addNode(restCandidateList.get(selectRand));
-                instance.resetState(graspSol);
-            }
-            // Fase de mejora
-            graspSol.removeUnnedeed();
-            Solution improvedSol = graspSol;
-            if (improvedSol.solutionValue() >= 2) {
-                Solution graspSolImproved = new FilterUnnecesaryNodes(graspSol, eval).bestSolutionFound;
-                LocalSearch ls = new LocalSearch(graspSolImproved, eval);
-                improvedSol = ls.bestSolutionFound;
-                improvedSol.removeUnnedeed();
+            GRASP graspExec = new GRASP(nIterGrasp, paramAlpha, instance, eval);
+            System.out.println(String.format("------------------------ INSTANCE %s ------------------------", i.getName()));
+            Instant initTime = Instant.now();
+            Solution bestSolutionFound = graspExec.run();
+            Instant endTime = Instant.now();
+            String pathRandomSols = inPath + "/solutionsv6/grasp_solutions/";
+            PrintWriter writer = new PrintWriter(pathRandomSols + i.getName() + ".txt", "UTF-8");
+            System.out.println(bestSolutionFound.solutionValue());
 
-            }
-            if (improvedSol.solutionValue() < bestValueFound) {
-                bestSolutionFound = improvedSol;
-                bestValueFound = improvedSol.solutionValue();
-            }
         }
-        System.out.println(bestSolutionFound.solutionValue());
-
     }
-
 }

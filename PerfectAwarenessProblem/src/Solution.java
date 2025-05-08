@@ -2,26 +2,24 @@ import java.math.BigInteger;
 import java.util.*;
 
 public class Solution {
-    //
-    static float awareFactor;
-    static float betFactor;
-    static float degFactor;
-    static float eigFactor;
     // In this works, solutions are composed as a number of nodes
     // Static (general) parameters
+    public static double awareFactor;
+    public static double betFactor;
+    public static double degFactor;
+    public static double eigFactor;
     public static Instance instance;
     // Structure - related parameters
     private BigInteger solutionBw;
     // Metrics parameters
-    private int cumCentrality = 0;
     private int solutionValue = Integer.MAX_VALUE;
     // Diffusion parameters
     private int numberAware = 0;
     private int[] awareNeighs;
 
     // GRASP parameters
-    public float minVal = Float.MAX_VALUE;
-    public float maxVal = Float.MIN_VALUE;
+    public double minVal = Double.MAX_VALUE;
+    public double maxVal = Double.MIN_VALUE;
 
 
     public Solution(BigInteger solution) {
@@ -91,14 +89,20 @@ public class Solution {
     }
 
     public ArrayList<PairVal> candidateList() {
-        maxVal = Float.MIN_VALUE;
-        minVal = Float.MAX_VALUE;
+        maxVal = Double.MIN_VALUE;
+        minVal = Double.MAX_VALUE;
         ArrayList<PairVal> al = new ArrayList<>();
         for (int j : instance.getNodes()) {
-            if (!this.isIn(j)) {
-                float awareValue = (float) (instance.graph.get(j).size() - getAwareNeighs(j)) / instance.graph.get(j).size();
-                float[] cen = instance.getCentrality(j);
-                float nodeValue = (betFactor*cen[0] + degFactor*cen[1] + eigFactor*cen[2] + awareFactor*awareValue)/(betFactor + degFactor + eigFactor + awareValue);
+            if (!this.isIn(j) && !instance.isLeaf(j)) {
+                double awareValue = (double) (instance.graph.get(j).size() - getAwareNeighs(j)) / instance.graph.get(j).size();
+                double nodeValue = 0;
+                if(awareValue == 0) {
+                    nodeValue = 0;
+                }
+                else {
+                    double[] cen = instance.getCentrality(j);
+                    nodeValue = awareValue*(betFactor * cen[0] + degFactor * cen[1] + eigFactor * cen[2]) / (betFactor + degFactor + eigFactor);
+                }
                 if(nodeValue > maxVal) maxVal = nodeValue;
                 if(nodeValue < minVal) minVal = nodeValue;
                 al.add(new PairVal(j, nodeValue));
@@ -149,7 +153,5 @@ public class Solution {
     public void setAware(int nAware) { this.numberAware = nAware; }
 
     public int getAware() { return this.numberAware; }
-
-    // STATIC METHODS
 
 }
