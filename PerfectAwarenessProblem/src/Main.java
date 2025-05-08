@@ -3,6 +3,8 @@ import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -40,8 +42,18 @@ public class Main {
         double eigcent = 0.9650;
         double awareFact = 0.7777;
 
-
+        File[] dirSolved = new File(inPath + "/solutionsv6/grasp_solutions").listFiles();
+        ArrayList<String> namesFiles = new ArrayList<>();
+        for(File i: dirSolved) {
+            namesFiles.add(i.getName().replace(".txt", ""));
+        }
+        HashSet<String> solved = new HashSet<>(namesFiles);
         for (File i : dirInstances.listFiles()) {
+            if(solved.contains(i.getName())) {
+                System.out.println("Computed");
+               continue;
+            }
+            // i = new File(pathInstances + "/10_9_1_social_0.in");
             int nIterGrasp = graspIters;
             Solution.awareFactor = awareFact;
             Solution.betFactor = betcent;
@@ -52,24 +64,24 @@ public class Main {
             Solution.instance = instance;
             GRASP graspExec = new GRASP(nIterGrasp, paramAlpha, instance, eval);
             System.out.println(String.format("------------------------ INSTANCE %s ------------------------", i.getName()));
-            long initTime = System.nanoTime();
+            Instant initTime = Instant.now();
             Solution bestSolutionFound = graspExec.run();
-            long endTime = System.nanoTime();
-            String pathRandomSols = inPath + "/solutionsv5/grasp_solutions/";
+            Instant endTime = Instant.now();
+            String pathRandomSols = inPath + "/solutionsv6/grasp_solutions/";
             PrintWriter writer = new PrintWriter(pathRandomSols + i.getName() + ".txt", "UTF-8");
             if (bestSolutionFound == null) {
                 System.out.println("No se ha encontrado solución con este método para la instancia " + i.getName());
                 writer.println(i.getName().split("\\.")[0]);
                 // Si no encontramos solución, usamos la solución trivial: semilla con todos los nodos del grafo
                 writer.println(instance.getNumberNodes());
-                writer.println(endTime - initTime);
+                writer.println(Duration.between(initTime, endTime).toMillis());
                 writer.close();
             } else {
                 System.out.println("Instancia " + i.getName() + " con valor de la FO " + bestSolutionFound.solutionValue() + " y con solución " + bestSolutionFound);
                 writer.println(i.getName().split("\\.")[0]);
                 writer.println(bestSolutionFound.solutionValue());
                 writer.println(bestSolutionFound);
-                writer.println(endTime - initTime);
+                writer.println(Duration.between(initTime, endTime).toMillis());
                 writer.close();
             }
         }

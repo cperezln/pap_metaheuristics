@@ -106,17 +106,18 @@ public class Instance {
             Scanner reader = new Scanner(file);
             seed = Integer.parseInt(reader.nextLine());
             k = Integer.parseInt(reader.nextLine());
-            numberNodes = Integer.parseInt(reader.nextLine());
-            numberEdges = Integer.parseInt(reader.nextLine());
+            int givenNumberNodes = Integer.parseInt(reader.nextLine());
+            int givenNumberEdges = Integer.parseInt(reader.nextLine());
             name = file.getName();
             ArrayList<int[]> edgeList = new ArrayList<>();
             // Preprocesado para estudiar los nodos que pueden colapsarse, siguiendo la filosofía del estado del arte
-            for(int i = 0; i < numberEdges; i++) {
+            for(int i = 0; i < givenNumberEdges; i++) {
                 String[] sEdge = reader.nextLine().split(" ");
                 int[] edge = {Integer.parseInt(sEdge[0]), Integer.parseInt(sEdge[1])};
                 edgeList.add(edge);
             }
-            ArrayList<int[]> newEdges = preprocessing(edgeList, numberNodes);
+            ArrayList<int[]> newEdges = preprocessing(edgeList, givenNumberNodes);
+            numberEdges = newEdges.size();
             for(int[] edge: newEdges) {
                 if(edge[0] != edge[1]) {
                     ArrayList<Integer> edgeListStart = graph.getOrDefault(edge[0], new ArrayList<>());
@@ -135,6 +136,7 @@ public class Instance {
                     state.put(edge[1], 0);
                 }
             }
+            numberNodes = graph.size();
             this.setLeafNodes();
         }
         catch (Exception e) {

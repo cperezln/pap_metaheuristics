@@ -1,3 +1,5 @@
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 
 public class GRASP {
@@ -16,21 +18,26 @@ public class GRASP {
 
     public Solution constructivePhase() {
         Solution graspSol = new Solution();
-        long constructedTime = System.nanoTime();
+        Instant consStart = Instant.now();
 
         while (!eval.isSolution(graspSol)) {
             ArrayList<PairVal> candidateList = graspSol.candidateList();
             ArrayList<Integer> restCandidateList = new ArrayList<>();
-            float rclThresh = (float) (graspSol.minVal + alphaValue * (graspSol.maxVal - graspSol.minVal));
+            double rclThresh = (double) (graspSol.minVal + alphaValue * (graspSol.maxVal - graspSol.minVal));
             for (PairVal pv : candidateList) {
                 if (pv.val >= rclThresh) restCandidateList.add(pv.node);
             }
             int selectRand = (int) (Math.random() * restCandidateList.size());
-            graspSol.addNode(restCandidateList.get(selectRand));
+            try {
+                graspSol.addNode(restCandidateList.get(selectRand));
+            }
+            catch (Exception e){
+                System.out.println("nani");
+            }
             instance.resetState(graspSol);
         }
 
-        double graspTime = (System.nanoTime() - constructedTime) / Math.pow(10, 9);
+        double graspTime = (Duration.between(consStart, Instant.now())).toMillis();
         System.out.println(String.format("GRASP constructing time %f with value %d", graspTime, graspSol.solutionValue()));
         return graspSol;
     }
@@ -51,7 +58,7 @@ public class GRASP {
         boolean timeLimit = false;
         int bestValueFound = Integer.MAX_VALUE;
         Solution bestSolutionFound = null;
-        long initTime = System.nanoTime();
+        Instant start = Instant.now();
         for (int j = 0; j < nIters; j++) {
             if(timeLimit) {
                 break;
@@ -62,7 +69,7 @@ public class GRASP {
             Solution improvedSol = graspSol;
             double execTime = 0;
             improvedSol = improvePhase(improvedSol);
-            if ((System.nanoTime() - initTime) / Math.pow(10, 9) >= 300) {
+            if (Duration.between(start, Instant.now()).toMillis() >= 300000) {
                 timeLimit = true;
             }
             if (improvedSol.solutionValue() < bestValueFound) {
@@ -71,6 +78,7 @@ public class GRASP {
                 System.out.println(String.format("Improved solution with value %d and time %f", bestValueFound, execTime));
             }
         }
+        System.out.println("TIME RUNNING " + Duration.between(start, Instant.now()).toMillis());
         return bestSolutionFound;
     }
 }

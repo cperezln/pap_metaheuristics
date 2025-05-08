@@ -1,4 +1,6 @@
 import java.math.BigInteger;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.LinkedList;
 
 public class LocalSearch {
@@ -8,7 +10,9 @@ public class LocalSearch {
         // Definimos la búsqueda local con el esquema habitual
         this.bestSolutionFound = solution;
         boolean improved = true;
-        while (improved) {
+        boolean timeLimit = false;
+        Instant initTime = Instant.now();
+        while (improved && !timeLimit) {
             // Implementamos el movimiento de la solución. En este caso, es un swap de dos nodos de la solución por un nodo que no esté en la misma.
             this.bestSolutionFound = new FilterUnnecesaryNodes(this.bestSolutionFound, e).bestSolutionFound;
             solution = this.bestSolutionFound;
@@ -16,6 +20,10 @@ public class LocalSearch {
             LinkedList<Integer> nodesNotInSolution = this.bestSolutionFound.nodesNotInSolution();
             for (Integer node : nodesNotInSolution) {
                 if(improved) break;
+                if(Duration.between(initTime, Instant.now()).toMillis() >= 300000) {
+                    timeLimit = true;
+                    break;
+                }
                 // El intercambio consiste en coger uno de los nodos que no está en la solución, e intentar intercambiarlo por un par de los nodos
                 // que sí que están.
                 int iter = 0;
@@ -27,6 +35,10 @@ public class LocalSearch {
                     int indexJ = nextPossibleJ.getLowestSetBit();
                     while (indexJ != -1) {
                         if(improved) break;
+                        if(Duration.between(initTime, Instant.now()).toMillis() >= 300000) {
+                            timeLimit = true;
+                            break;
+                        }
                         iter++;
                         int exchangeOne = indexI;
                         int exchangeTwo = indexJ;
@@ -39,6 +51,10 @@ public class LocalSearch {
                                 // System.out.println("Iteraciones para mejorar " + iter + " con resultado de FO " + neighbor.solutionValue());
                                 this.bestSolutionFound = neighbor;
                                 improved = true;
+                            }
+                            if(Duration.between(initTime, Instant.now()).toMillis() >= 300000) {
+                                timeLimit = true;
+                                break;
                             }
                         }
                         nextPossibleJ = nextPossibleJ.xor(BigInteger.ONE.shiftLeft(indexJ));
