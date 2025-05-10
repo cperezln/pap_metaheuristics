@@ -1,29 +1,33 @@
-import java.util.*;
+import java.math.BigInteger;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Queue;
 
 public class FilterUnnecesaryNodes {
     Solution bestSolutionFound;
-    public FilterUnnecesaryNodes(Solution sol, Evaluation e) {
+    public FilterUnnecesaryNodes(Solution sol, SpreadingProcessOptimize e) {
+        bestSolutionFound = sol;
         Queue<Solution> qSols = new LinkedList<>();
-        // Método optimizable
+        HashSet<BigInteger> visitedSolutions = new HashSet<>();
         qSols.add(sol);
-        HashMap<String, Boolean> visitedSolutions = new HashMap<>();
         Solution bestSol = sol;
+        int added = 0;
         while(!qSols.isEmpty()) {
             Solution actSolution = qSols.poll();
-            int maxQueueSize = Math.min(actSolution.solutionValue(), (int) Math.ceil(actSolution.solutionValue() / Math.log(actSolution.solutionValue())));
-            int added = 0;
-            ArrayList actArrSol = actSolution.getSolution();
-            for(int i = 0; i < actArrSol.size(); i++) {
-                ArrayList<Integer> newArrSol = new ArrayList<>();
-                for(int j = 0; j < actArrSol.size(); j++) {
-                    if(i != j) newArrSol.add((Integer) actArrSol.get(j));
-                }
-                Solution newPossibleSolution = new Solution(newArrSol);
+            added = Math.max(0, added - 1);
+            int maxQueueSize =  Math.min(actSolution.solutionValue(), (int) Math.ceil(actSolution.solutionValue() / (5*Math.log(actSolution.solutionValue()))));
+            BigInteger nextPossible = actSolution.getBitwiseRepresentation();
+            int index = nextPossible.getLowestSetBit();
+            while(index!=-1) {
+                BigInteger bwActSol = actSolution.getBitwiseRepresentation();
+                BigInteger newSol = bwActSol.xor(BigInteger.ONE.shiftLeft(index));
+                Solution newPossibleSolution = new Solution(newSol);
+                Solution.instance.resetState(newPossibleSolution);
                 if(e.isSolution(newPossibleSolution)) {
-                    if(added < maxQueueSize) {
-                        if(!visitedSolutions.getOrDefault(newPossibleSolution.toString(), false)) {
+                    if(added <= maxQueueSize) {
+                        if (!visitedSolutions.contains(newSol)) {
+                            visitedSolutions.add(newSol);
                             qSols.add(newPossibleSolution);
-                            visitedSolutions.put(newPossibleSolution.toString(), true);
                             added++;
                             if (newPossibleSolution.solutionValue() < bestSol.solutionValue()) {
                                 bestSol = newPossibleSolution;
@@ -32,6 +36,8 @@ public class FilterUnnecesaryNodes {
                     }
                     else break;
                 }
+                nextPossible = nextPossible.xor(BigInteger.ONE.shiftLeft(index));
+                index = nextPossible.getLowestSetBit();
             }
         }
         bestSolutionFound = bestSol;

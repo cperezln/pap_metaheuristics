@@ -1,72 +1,53 @@
+import java.math.BigInteger;
 import java.util.*;
-import java.util.stream.IntStream;
 
 public class Solution {
     // In this works, solutions are composed as a number of nodes
-    static Instance instance;
-    private ArrayList<Integer> solution;
-    private boolean[] containSet;
-    private int cumCentrality = 0;
-    private String string;
+    // Static (general) parameters
+    public static double awareFactor;
+    public static double betFactor;
+    public static double degFactor;
+    public static double eigFactor;
+    public static Instance instance;
+    // Structure - related parameters
+    private BigInteger solutionBw;
+    // Metrics parameters
+    private int solutionValue = Integer.MAX_VALUE;
+    // Diffusion parameters
+    private int numberAware = 0;
+    private int[] awareNeighs;
 
-    public Solution(ArrayList<Integer> solution) {
-        this.solution = solution;
-        this.containSet = new boolean[instance.getNumberNodes()];
-        for(int i: this.solution) {
-            this.containSet[i] = true;
-            this.cumCentrality += instance.getCentrality(i);
-        }
-        String s = "(";
-        for(int i: solution) {
-            s += Integer.toString(i) + ",";
-        }
-        s += ")";
-        this.string = s;
+    // GRASP parameters
+    public double minVal = Double.MAX_VALUE;
+    public double maxVal = Double.MIN_VALUE;
+
+
+    public Solution(BigInteger solution) {
+        this.solutionBw = solution;
+        this.solutionValue = solution.bitCount();
+        this.numberAware = this.solutionValue;
     }
 
-    public Solution(int[] solution) {
-        this.solution =  new ArrayList<>();
-        this.containSet = new boolean[solution.length];
-        for(int i: solution) {
-            this.solution.add(i);
-            this.containSet[i] = true;
-            this.cumCentrality += instance.getCentrality(i);
-        }
-        String s = "(";
-        for(int i: solution) {
-            s += Integer.toString(i) + ",";
-        }
-        s += ")";
-        this.string = s;
-    }
-
-    public boolean checkValidityOfSolution(Instance instance){
-        return solution.size() < instance.getNumberNodes();
-    }
-
-    public ArrayList<Integer> getSolution() {
-        return solution;
-    }
-
-    public int getCumCentrality() {
-        return cumCentrality;
-    }
-
-    public int solutionValue() { return solution.size(); }
-
-    public void addNode(int node) { this.solution.add(node); }
-
-    public boolean isIn(int node) { return this.containSet[node]; }
-
-    public LinkedList<Integer> nodesNotInSolution() {
-        LinkedList<Integer> ll = new LinkedList<>();
-        for(int j: instance.getNodes()) if(!this.isIn(j)) ll.add(j);
-        return ll;
+    public Solution() {
+        this.solutionBw = BigInteger.ZERO;
+        this.solutionValue = 0;
+        this.numberAware = 0;
     }
 
     @Override
     public String toString() {
-        return this.string;
+        String s = "(";
+        BigInteger nextPossible = this.solutionBw;
+        int index = nextPossible.getLowestSetBit();
+        if (index != -1) {
+            do {
+                s += index + ", ";
+                nextPossible = nextPossible.xor(BigInteger.ONE.shiftLeft(index));
+                index = nextPossible.getLowestSetBit();
+            } while (index != -1);
+        }
+        s += ")";
+        return s;
     }
 
     @Override
@@ -74,132 +55,105 @@ public class Solution {
         return this.toString().hashCode();
     }
 
-    public static Solution removeUnnedeed(Solution actual) {
-        ArrayList<Integer> newSol = new ArrayList<>();
-        for(Integer seed: actual.solution) {
-            if(instance.nSpreaders.get(seed) < instance.getCentrality(seed)*0.5) {
-                newSol.add(seed);
-            }
-        }
-        return new Solution(newSol);
+    public int solutionValue() {
+        return solutionValue;
     }
 
-    public static Solution GenerateBruteForce(Instance instance, Evaluation eval) {
-        int[] arr = IntStream.range(0, instance.getNumberNodes()).toArray();
-        boolean foundSol = false;
-        Solution posSol = null;
-        for (int solSize = 1; solSize <= instance.getNumberNodes(); solSize++) {
-            ArrayList<int[]> possibleSolutions = new ArrayList<>();
-            try {
-                Main.computeCombination(arr, arr.length, solSize, possibleSolutions);
-            } catch (Exception e) {
-                e.printStackTrace();
-                break;
-            }
-            for (int[] tuple : possibleSolutions) {
-                posSol = new Solution(tuple);
-                if (eval.isSolution(posSol)) {
-                    System.out.println("Instancia " + instance.name + " con solución " + posSol);
-                    foundSol = true;
-                    break;
-                }
-            }
-            if(foundSol) break;
-        }
-        return posSol;
-    }
-    public static Solution GenerateRandomSolutionDegree(Instance instance, Evaluation eval) {
-        PriorityQueue<PairDeg> nodeDeg = new PriorityQueue<>();
-        for(Map.Entry<Integer, ArrayList<Integer>> entry: instance.graph.entrySet()) {
-            nodeDeg.add(new PairDeg(entry.getKey(), entry.getValue().size()));
-        }
-        int k = (int) Math.ceil(instance.getNumberNodes()/2);
-        int[] setToPick = new int[k];
-        for(int j = 0; j < k; j++) setToPick[j] = nodeDeg.poll().node;
-        Solution sol = null;
-        HashSet<Integer> visited = new HashSet<>();
-        while(sol == null) {
-            int randomNumberOfNodes = (int) Math.ceil(Math.random()*k);
-            visited.add(randomNumberOfNodes);
-            ArrayList<Integer> posSol = new ArrayList<>();
-            for(int j = 0; j < randomNumberOfNodes; j++) {
-                int toAdd = setToPick[Integer.min(Integer.max((int) Math.floor(Math.random()*k) - 1, 0), k - 1)];
-                if(!posSol.contains(toAdd)) posSol.add(toAdd);
-            }
-            if(eval.isSolution(new Solution(posSol))) {
-                sol = new Solution(posSol);
-                break;
-            }
-            else if(visited.size() == k) {
-                break;
+    public void addNode(int node) {
+        if(!this.isIn(node)) {
+            this.solutionBw = this.solutionBw.add(BigInteger.ONE.shiftLeft(node));
+            this.solutionValue = this.solutionBw.bitCount();
+            this.numberAware = this.solutionValue;
+            instance.setState(node, 2);
+            for (int neigh : instance.graph.get(node)) {
+                instance.setState(neigh, 1);
             }
         }
-        return sol;
-    }
-    public static Solution GenerateIncrementalRandomSolution(Instance instance, Evaluation eval) {
-        Solution sol = null;
-        HashSet<Integer> visited = new HashSet<>();
-        ArrayList<Integer> posSol = new ArrayList<>();
-        ArrayList<Integer> nodes = instance.getNodes();
-        while(sol == null) {
-            int randomIndex = Math.min((int) Math.ceil(Math.random()*nodes.size()), nodes.size() - 1);
-            int posNode = nodes.get(randomIndex);
-            if(!visited.contains(posNode)) {
-                visited.add(posNode);
-                posSol.add(posNode);
-            }
-            Solution auxSol = new Solution(posSol);
-            if(eval.isSolution(auxSol)) sol = auxSol;
-        }
-        return sol;
     }
 
-    public static Solution GenerateDecrementalRandomSolution(Instance instance, Evaluation eval) {
-        Solution sol = null;
-        ArrayList<Integer> posSol = instance.getNodes();
-        while(sol == null) {
-            int randomIndex = Math.min((int) Math.ceil(Math.random()*posSol.size()), posSol.size() - 1);
-            int posNode = posSol.get(randomIndex);
-            posSol.remove(randomIndex);
-            Solution auxSol = new Solution(posSol);
-            if(!eval.isSolution(auxSol)) {
-                auxSol.addNode(posNode);
-                sol = auxSol;
-            }
-        }
-        return sol;
+    public void removeNode(int node) {
+        this.solutionBw.clearBit(node);
+        this.solutionValue = this.solutionBw.bitCount();
+        this.numberAware = this.solutionValue;
+        instance.setState(node, 0);
     }
 
-    public static Solution GenerateDegreeGreedySolution(Instance instance, Evaluation eval) {
-        Solution sol = null;
-        ArrayList<Integer> posSol = new ArrayList<>();
-        HashSet<Integer> inSolution = new HashSet<>();
-        while(sol == null) {
-            int selectedNode = -1;
-            double bestValue = Integer.MIN_VALUE;
-            // TODO mejorar esto. Podemos hacer un prorityqueue que ordene directamente los nodos por
-            // el factor que estamos seleccionando
-            for(Integer j: instance.graph.keySet()) {
-                if(instance.nodeValue(j) > bestValue && !inSolution.contains(j)) {
-                    selectedNode = j;
-                    bestValue = instance.nodeValue(j);
+    public boolean isIn(int node) {
+        return this.solutionBw.testBit(node);
+    }
+
+    public LinkedList<Integer> nodesNotInSolution() {
+        LinkedList<Integer> ll = new LinkedList<>();
+        for (int j : instance.getNodes()) if (!this.isIn(j)) ll.add(j);
+        return ll;
+    }
+
+    public ArrayList<PairVal> candidateList() {
+        maxVal = Double.MIN_VALUE;
+        minVal = Double.MAX_VALUE;
+        ArrayList<PairVal> al = new ArrayList<>();
+        for (int j : instance.getNodes()) {
+            if (!this.isIn(j) && !instance.isLeaf(j)) {
+                double awareValue = (double) (instance.graph.get(j).size() - getAwareNeighs(j)) / instance.graph.get(j).size();
+                double nodeValue = 0;
+                if(awareValue == 0) {
+                    nodeValue = 0;
                 }
-            }
-            if(selectedNode != -1) {
-                posSol.add(selectedNode);
-                inSolution.add(selectedNode);
-                for(Integer spreader: posSol) {
-                    for(Integer neigh: instance.graph.get(spreader)) {
-                        instance.nSpreaders.put(neigh, instance.nSpreaders.get(neigh) + 1);
-                    }
+                else {
+                    double[] cen = instance.getCentrality(j);
+                    nodeValue = awareValue*(betFactor * cen[0] + degFactor * cen[1] + eigFactor * cen[2]) / (betFactor + degFactor + eigFactor);
                 }
-            }
-            Solution newSol = new Solution(posSol);
-            if(eval.isSolution(newSol)) {
-                sol = newSol;
-                break;
+                if(nodeValue > maxVal) maxVal = nodeValue;
+                if(nodeValue < minVal) minVal = nodeValue;
+                al.add(new PairVal(j, nodeValue));
             }
         }
-        return sol;
+        return al;
     }
+
+    public BigInteger getBitwiseRepresentation() {
+        return this.solutionBw;
+    }
+
+    public void removeUnnedeed() {
+        BigInteger nextPossible = this.solutionBw;
+        int index = nextPossible.getLowestSetBit();
+        if (index != -1) {
+            do {
+                if(this.getSpreaderNeighs(index) >= instance.graph.get(index).size() * 0.5 && this.isIn(index)) {
+                    this.removeNode(index);
+                }
+                nextPossible = nextPossible.xor(BigInteger.ONE.shiftLeft(index));
+                index = nextPossible.getLowestSetBit();
+            } while (index != -1);
+        }
+    }
+
+    public int getAwareNeighs(int node) {
+        /*int numberOf = 0;
+        for(int i: instance.graph.get(node)) {
+            if(instance.getNodeState(i) >= 1) numberOf++;
+        }
+        return numberOf;*/
+        return awareNeighs[node];
+    }
+
+    public int getSpreaderNeighs(int node) {
+        int numberOf = 0;
+        for(int i: instance.graph.get(node)) {
+            if(instance.getNodeState(i) == 2) numberOf++;
+        }
+        return numberOf;
+    }
+
+    public void setAwareCount(int[] aware) {
+        this.awareNeighs = aware;
+    }
+
+    public void setAware(int nAware) { this.numberAware = nAware; }
+
+    public int getAware() { return this.numberAware; }
+
+    // STATIC METHODS
+
 }
