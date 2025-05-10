@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from gurobipy import *
 import networkx as nx
 
+path = "/home/cristian/Escritorio/TFM/to_send/"
 def model_n2(G):
     init_time = time.time()
     # Defining the model
@@ -38,6 +39,7 @@ def model_n2(G):
         print("Execution time: ", time.time() - init_time)
         print("Computed solution seed set: ", computed_seed_set)
         print("Computed solution value: ", computed_solution_value)
+        return computed_solution_value
     except GurobiError as e:
         print(f"Gurobi status {model.Status}. Model errored.")
         problematic_instances.append(path_problem)
@@ -45,10 +47,9 @@ def model_n2(G):
         # print("Try with academic license")
 
 
-dir = "/home/cristian/Escritorio/TFM/pap_metaheuristics/previous_work/instances/"
+dir = f"{path}/previous_work/instances100/"
 problematic_instances = []
 for file in os.listdir(dir):
-    file = "10_9_1_social_0.in"
     path_problem = "{}/{}".format(dir, file)
     f = open(path_problem, "r")
     f.readline(); f.readline()
@@ -60,6 +61,9 @@ for file in os.listdir(dir):
         s, e = map(int, f.readline().split())
         G.add_edge(s, e)
 
-    model_n2(G)
+    res = model_n2(G)
+    with open(f"{path}/gurobi_sols/{file}", "w") as f:
+        f.write(f"{res}")
+
 
 
