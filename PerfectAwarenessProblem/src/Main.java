@@ -28,21 +28,33 @@ class PairVal implements Comparable<PairVal>{
 public class Main {
     public static void main(String[] args) throws FileNotFoundException, UnsupportedEncodingException {
         String inPath = args[0];
+        int configIrace = Integer.parseInt(args[1])
         System.out.println("Path para guardar los resultados " + inPath);
 
         String pathInstances = inPath + "/previous_work/instances";
         String pathSolutions = inPath + "/previous_work/solutions";
         File dirInstances = new File(pathInstances);
 
+        double paramAlpha = 0;
+        double betcent = 0;
+        double degcent = 0;
+        double eigcent = 0;
         // Best params IRACE
-        double paramAlpha = 0.6725;
-        int graspIters = 72;
-        double betcent = 0.4636;
-        double degcent = 0.0043;
-        double eigcent = 0.9650;
-        double awareFact = 0.7777;
+        if(configIrace == 1) {
+            paramAlpha = 0.2412;
+            betcent = 0.4915;
+            degcent = 0.9034;
+            eigcent = 0.5253;
+        }
 
-        File[] dirSolved = new File(inPath + "/solutionsv6/grasp_solutions").listFiles();
+        if(configIrace == 2) {
+            paramAlpha = 0.2412;
+            betcent = 0.4915;
+            degcent = 0.9034;
+            eigcent = 0.5253;
+        }
+
+        File[] dirSolved = new File(inPath + "/solutionsv7/grasp_solutions").listFiles();
         ArrayList<String> namesFiles = new ArrayList<>();
         for(File i: dirSolved) {
             namesFiles.add(i.getName().replace(".txt", ""));
@@ -54,8 +66,7 @@ public class Main {
                continue;
             }
             // i = new File(pathInstances + "/10_9_1_social_0.in");
-            int nIterGrasp = graspIters;
-            Solution.awareFactor = awareFact;
+            int nIterGrasp = 150;
             Solution.betFactor = betcent;
             Solution.degFactor = degcent;
             Solution.eigFactor = eigcent;
@@ -67,7 +78,7 @@ public class Main {
             Instant initTime = Instant.now();
             Solution bestSolutionFound = graspExec.run();
             Instant endTime = Instant.now();
-            String pathRandomSols = inPath + "/solutionsv6/grasp_solutions/";
+            String pathRandomSols = inPath + "/solutionsv7/grasp_solutions/";
             PrintWriter writer = new PrintWriter(pathRandomSols + i.getName() + ".txt", "UTF-8");
             if (bestSolutionFound == null) {
                 System.out.println("No se ha encontrado solución con este método para la instancia " + i.getName());
