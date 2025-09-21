@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.LinkedList;
 
 public class LocalSearch {
+    public static boolean measureTimeLimit;
     Solution bestSolutionFound;
 
     public LocalSearch(Solution solution, SpreadingProcessOptimize e) {
@@ -20,13 +21,12 @@ public class LocalSearch {
             LinkedList<Integer> nodesNotInSolution = this.bestSolutionFound.nodesNotInSolution();
             for (Integer node : nodesNotInSolution) {
                 if(improved) break;
-                if(Duration.between(initTime, Instant.now()).toMillis() >= 300000) {
+                if(Duration.between(initTime, Instant.now()).toMillis() >= 300000 && measureTimeLimit) {
                     timeLimit = true;
                     break;
                 }
                 // El intercambio consiste en coger uno de los nodos que no está en la solución, e intentar intercambiarlo por un par de los nodos
                 // que sí que están.
-                int iter = 0;
                 BigInteger nextPossibleI = solution.getBitwiseRepresentation();
                 int indexI = nextPossibleI.getLowestSetBit();
                 while (indexI != -1) {
@@ -35,11 +35,10 @@ public class LocalSearch {
                     int indexJ = nextPossibleJ.getLowestSetBit();
                     while (indexJ != -1) {
                         if(improved) break;
-                        if(Duration.between(initTime, Instant.now()).toMillis() >= 300000) {
+                        if(Duration.between(initTime, Instant.now()).toMillis() >= 300000 && measureTimeLimit) {
                             timeLimit = true;
                             break;
                         }
-                        iter++;
                         int exchangeOne = indexI;
                         int exchangeTwo = indexJ;
                         BigInteger bwSol = solution.getBitwiseRepresentation().xor(BigInteger.ONE.shiftLeft(exchangeOne)).xor(BigInteger.ONE.shiftLeft(exchangeTwo)).add(BigInteger.ONE.shiftLeft(node));
@@ -48,11 +47,10 @@ public class LocalSearch {
                         if(e.isSolution(finalSol)) {
                             Solution neighbor = new FilterUnnecesaryNodes(finalSol, e).bestSolutionFound;
                             if (neighbor.solutionValue() < this.bestSolutionFound.solutionValue()) {
-                                // System.out.println("Iteraciones para mejorar " + iter + " con resultado de FO " + neighbor.solutionValue());
                                 this.bestSolutionFound = neighbor;
                                 improved = true;
                             }
-                            if(Duration.between(initTime, Instant.now()).toMillis() >= 300000) {
+                            if(Duration.between(initTime, Instant.now()).toMillis() >= 300000 && measureTimeLimit) {
                                 timeLimit = true;
                                 break;
                             }

@@ -72,7 +72,7 @@ public class Solution {
     }
 
     public void removeNode(int node) {
-        this.solutionBw.clearBit(node);
+        this.solutionBw = this.solutionBw.clearBit(node);
         this.solutionValue = this.solutionBw.bitCount();
         this.numberAware = this.solutionValue;
         instance.setState(node, 0);
@@ -156,4 +156,117 @@ public class Solution {
 
     // STATIC METHODS
 
+    public static Solution GenerateIncrementalRandomSolution(Instance instance, SpreadingProcessOptimize eval) {
+        Solution sol = null;
+        HashSet<Integer> visited = new HashSet<>();
+        Solution posSol = new Solution();
+        ArrayList<Integer> nodes = new ArrayList<>();
+        for(int i: instance.getNodes()) {
+            if(!instance.isLeaf(i)) {
+                nodes.add(i);
+            }
+        }
+        while(sol == null) {
+            int randomIndex = Math.min((int) Math.ceil(Math.random()*nodes.size()), nodes.size() - 1);
+            int posNode = nodes.get(randomIndex);
+            if(!visited.contains(posNode) && !instance.isLeaf(posNode)) {
+                nodes.remove(randomIndex);
+                visited.add(posNode);
+                posSol.addNode(posNode);
+            }
+            Solution auxSol = posSol;
+            if(eval.isSolution(auxSol)) sol = auxSol;
+        }
+        return sol;
+    }
+
+    public static Solution GenerateDecrementalRandomSolution(Instance instance, SpreadingProcessOptimize eval) {
+        Solution sol = null;
+        HashSet<Integer> visited = new HashSet<>();
+        ArrayList<Integer> nodes = instance.getNodes();
+        Solution posSol = new Solution();
+        for(int node: nodes) {
+            posSol.addNode(node);
+        }
+        while(sol == null) {
+            int randomIndex = Math.min((int) Math.ceil(Math.random()*nodes.size()), nodes.size() - 1);
+            int posNode = nodes.get(randomIndex);
+            posSol.removeNode(posNode);
+            Solution auxSol = posSol;
+            if(!eval.isSolution(auxSol)) {
+                auxSol.addNode(posNode);
+                sol = auxSol;
+            }
+        }
+        return sol;
+    }
+
+    public static Solution GenerateGreedyDegreeSolution(Instance instance, SpreadingProcessOptimize eval) {
+        Solution posSol = new Solution();
+        ArrayList<Integer> nodesByDegree = instance.getNodes();
+        nodesByDegree.sort(new Comparator<Integer>() {
+            @Override
+            public int compare(Integer o1, Integer o2) {
+                int res = 0;
+                if(instance.getCentrality(o1)[1] < instance.getCentrality(o2)[1]){
+                    res = 1;
+                }
+                else if(instance.getCentrality(o1)[1] > instance.getCentrality(o2)[1]) {
+                    res = -1;
+                }
+                return res;
+            }
+        });
+        while(!eval.isSolution(posSol)) {
+            posSol.addNode(nodesByDegree.getFirst());
+            nodesByDegree.removeFirst();
+        }
+        return posSol;
+    }
+
+    public static Solution GenerateGreedyBetweenessSolution(Instance instance, SpreadingProcessOptimize eval) {
+        Solution posSol = new Solution();
+        ArrayList<Integer> nodesByDegree = instance.getNodes();
+        nodesByDegree.sort(new Comparator<Integer>() {
+            @Override
+            public int compare(Integer o1, Integer o2) {
+                int res = 0;
+                if(instance.getCentrality(o1)[0] < instance.getCentrality(o2)[0]){
+                    res = 1;
+                }
+                else if(instance.getCentrality(o1)[0] > instance.getCentrality(o2)[0]) {
+                    res = -1;
+                }
+                return res;
+            }
+        });
+        while(!eval.isSolution(posSol)) {
+            posSol.addNode(nodesByDegree.getFirst());
+            nodesByDegree.removeFirst();
+        }
+        return posSol;
+    }
+
+    public static Solution GenerateGreedyEigenvectorSolution(Instance instance, SpreadingProcessOptimize eval) {
+        Solution posSol = new Solution();
+        ArrayList<Integer> nodesByDegree = instance.getNodes();
+        nodesByDegree.sort(new Comparator<Integer>() {
+            @Override
+            public int compare(Integer o1, Integer o2) {
+                int res = 0;
+                if(instance.getCentrality(o1)[2] < instance.getCentrality(o2)[2]){
+                    res = 1;
+                }
+                else if(instance.getCentrality(o1)[2] > instance.getCentrality(o2)[2]) {
+                    res = -1;
+                }
+                return res;
+            }
+        });
+        while(!eval.isSolution(posSol)) {
+            posSol.addNode(nodesByDegree.getFirst());
+            nodesByDegree.removeFirst();
+        }
+        return posSol;
+    }
 }

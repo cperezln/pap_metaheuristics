@@ -7,8 +7,11 @@ import java.io.File;
 
 public class Instance {
     public String name;
+    public static HashMap<Integer, Integer> mapa = new HashMap<>();
     private int numberNodes;
     private int numberEdges;
+    private int givenNumberNodes;
+    private int givenNumberEdges;
     private HashMap<Integer, Integer> degreeMap = new HashMap<>();
     private HashMap<Integer, double[]> centrality = new HashMap<>();
     private HashMap<Integer, Integer> state = new HashMap<>(); // 0: ignorant, 1: aware, 2: spreader
@@ -42,7 +45,7 @@ public class Instance {
         for(int i = 0; i < arr.size(); i++) {
             int[] edge = arr.get(i);
             if (edge[0] != edge[1]) {
-                if (localDegreeMap.get(edge[0]) == 2 || localDegreeMap.get(edge[1]) == 2) {
+                if (localDegreeMap.get(edge[0]) == 2 && localDegreeMap.get(edge[1]) == 2) {
                     if(mapLabels[edge[0]] != -1 && mapLabels[edge[1]] == -1) {
                         mapLabels[edge[1]] = mapLabels[edge[0]];
                     }
@@ -69,11 +72,13 @@ public class Instance {
                 } else {
                     if(mapLabels[edge[0]] == -1) {
                         mapLabels[edge[0]] = lastNodeLabel;
+                        mapa.put(edge[0], lastNodeLabel);
                         lastNodeLabel++;
                     }
                     if(mapLabels[edge[1]] == -1) {
-                    mapLabels[edge[1]] = lastNodeLabel;
-                    lastNodeLabel++;
+                        mapLabels[edge[1]] = lastNodeLabel;
+                        mapa.put(edge[1], lastNodeLabel);
+                        lastNodeLabel++;
                     }
                 }
             }
@@ -86,17 +91,18 @@ public class Instance {
             if(mapLabels[edge[0]] != mapLabels[edge[1]]) {
                 if(!finalLabels.containsKey(mapLabels[edge[0]])) {
                     finalLabels.put(mapLabels[edge[0]], lastAvailableNode);
+                    mapa.put(edge[0], lastAvailableNode);
                     lastAvailableNode++;
                 }
                 if(!finalLabels.containsKey(mapLabels[edge[1]])) {
                     finalLabels.put(mapLabels[edge[1]], lastAvailableNode);
+                    mapa.put(edge[1], lastAvailableNode);
                     lastAvailableNode++;
                 }
                 int[] newEdge = {finalLabels.get(mapLabels[edge[0]]), finalLabels.get(mapLabels[edge[1]])};
                 newEdges.add(newEdge);
             }
         }
-
         return newEdges;
     }
 
@@ -106,8 +112,8 @@ public class Instance {
             Scanner reader = new Scanner(file);
             seed = Integer.parseInt(reader.nextLine());
             k = Integer.parseInt(reader.nextLine());
-            int givenNumberNodes = Integer.parseInt(reader.nextLine());
-            int givenNumberEdges = Integer.parseInt(reader.nextLine());
+            givenNumberNodes = Integer.parseInt(reader.nextLine());
+            givenNumberEdges = Integer.parseInt(reader.nextLine());
             name = file.getName();
             ArrayList<int[]> edgeList = new ArrayList<>();
             // Preprocesado para estudiar los nodos que pueden colapsarse, siguiendo la filosofía del estado del arte
@@ -166,7 +172,7 @@ public class Instance {
     }
 
     public void setCentrality(String file) throws FileNotFoundException {
-        String inPath = "/home/cristian/Escritorio/TFM/pap_metaheuristics//centralities/";
+        String inPath = "/home/cristian/Escritorio/TFM/pap_metaheuristics/centralities/";
         HashMap<Integer, Double> bw = new HashMap<>();
         Scanner reader2 = new Scanner(new File(inPath + "betweeness/" + file));
         HashMap<Integer, Double> betMap = new HashMap<>();
@@ -224,6 +230,22 @@ public class Instance {
     public int getNodeState(int node) { return this.state.get(node); }
 
     public boolean isLeaf(int node) { return this.leafNodes.contains(node);}
+
+    public double preproNodeReduction() {
+        return (double) this.numberNodes / this.givenNumberNodes;
+    }
+
+    public double preproEdgeReduction() {
+        return (double) this.numberEdges / this.givenNumberEdges;
+    }
+
+    public double proportionLeaf() {
+        int numberLeaf = 0;
+        for(int i = 0; i < numberNodes; i++) {
+            if(isLeaf(i)) numberLeaf+=1;
+        }
+        return (double) numberLeaf / numberNodes;
+    }
 
 
 }
