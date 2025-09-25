@@ -15,8 +15,9 @@ public class Instance {
     private HashSet<Integer> leafNodes = new HashSet<>();
     private int seed, k;
     HashMap<Integer, ArrayList<Integer>> graph = new HashMap<>();
+    private int uniqueNode = 0;
 
-    private static ArrayList<int[]> preprocessing(ArrayList<int[]> arr, int numberNodes) {
+    private ArrayList<int[]> preprocessing(ArrayList<int[]> arr, int numberNodes) {
         HashMap<Integer, ArrayList<Integer>> localGraph = new HashMap<>();
         HashMap<Integer, Integer> localDegreeMap = new HashMap<>();
         int lastNodeLabel = 0;
@@ -96,7 +97,14 @@ public class Instance {
                 newEdges.add(newEdge);
             }
         }
-
+        HashSet<Integer> finalDegreeSet = new HashSet<>(mapLabels.length);
+        for(int i = 0; i < mapLabels.length; i++) {
+            finalDegreeSet.add(mapLabels[i]);
+        }
+        if(finalDegreeSet.size() == 1){
+            int elem = finalDegreeSet.iterator().next();
+            uniqueNode = elem;
+        }
         return newEdges;
     }
 
@@ -117,7 +125,7 @@ public class Instance {
             }
             //numberNodes = givenNumberNodes;
             ArrayList<int[]> newEdges = preprocessing(edgeList, givenNumberNodes);
-            numberEdges = newEdges.size();
+            //numberEdges = newEdges.size();
             for(int[] edge: newEdges) {
                 if(edge[0] != edge[1]) {
                     ArrayList<Integer> edgeListStart = graph.getOrDefault(edge[0], new ArrayList<>());
@@ -137,7 +145,7 @@ public class Instance {
                 }
             }
             numberNodes = graph.size();
-            //this.setCentrality(c);
+            this.setCentrality(c);
             this.setLeafNodes();
         }
         catch (Exception e) {
@@ -242,5 +250,7 @@ public class Instance {
 
     public boolean isLeaf(int node) { return this.leafNodes.contains(node);}
 
-
+    public int getUniqueNode() {
+        return uniqueNode;
+    }
 }

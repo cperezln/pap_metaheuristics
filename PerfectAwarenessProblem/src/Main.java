@@ -47,7 +47,7 @@ public class Main {
         String algorithm = args.length > 2 ? args[2] : "GRASP"; // Default to GRASP if not specified
         System.out.println("Path para guardar los resultados " + inPath);
 
-        String pathInstances = inPath + "/previous_work/instance_test";
+        String pathInstances = inPath + "/previous_work/instances";
         String pathSolutions = inPath + "/previous_work/solutions";
         File dirInstances = new File(pathInstances);
 

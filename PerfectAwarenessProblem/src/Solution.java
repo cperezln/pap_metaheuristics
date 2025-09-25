@@ -71,6 +71,12 @@ public class Solution {
         }
     }
 
+    public void addNodeUnique(int node) {
+        this.solutionBw = this.solutionBw.add(BigInteger.ONE.shiftLeft(node));
+        this.solutionValue = this.solutionBw.bitCount();
+        this.numberAware = this.solutionValue;
+    }
+
     public void removeNode(int node) {
         this.solutionBw.clearBit(node);
         this.solutionValue = this.solutionBw.bitCount();

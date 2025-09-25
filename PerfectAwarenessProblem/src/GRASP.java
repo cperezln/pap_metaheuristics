@@ -55,13 +55,13 @@ public class GRASP {
         return graspSol;
     }
 
-    public Solution improvePhase(Solution sol) {
+    public Solution improvePhase(Solution sol, Instant startTime) {
         sol.removeUnnedeed();
         Solution improvedSol = sol;
         double execTime = 0;
         if (improvedSol.solutionValue() >= 2) {
             Solution graspSolImproved = new FilterUnnecesaryNodes(improvedSol, eval).bestSolutionFound;
-            LocalSearch ls = new LocalSearch(graspSolImproved, eval, TestRunner.LOCAL_SEARCH_TIME_LIMIT_MS);
+            LocalSearch ls = new LocalSearch(graspSolImproved, eval, TestRunner.LOCAL_SEARCH_TIME_LIMIT_MS,startTime);
             improvedSol = ls.bestSolutionFound;
             improvedSol.removeUnnedeed();
         }
@@ -82,7 +82,7 @@ public class GRASP {
             // Fase de mejora
             Solution improvedSol = graspSol;
             double execTime = 0;
-            improvedSol = improvePhase(improvedSol);
+            improvedSol = improvePhase(improvedSol,start);
             if (Duration.between(start, Instant.now()).toMillis() >= TestRunner.TIME_LIMIT_MS) {
                 timeLimit = true;
             }

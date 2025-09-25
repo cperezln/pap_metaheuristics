@@ -1,4 +1,5 @@
 import java.math.BigInteger;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedList;
 import java.util.ArrayList;
@@ -7,7 +8,7 @@ public class LocalSearch {
     Solution bestSolutionFound;
     private long timeLimitMs;
 
-    public LocalSearch(Solution solution, SpreadingProcessOptimize e, long timeLimitMs) {
+    public LocalSearch(Solution solution, SpreadingProcessOptimize e, long timeLimitMs, Instant startTime) {
         this.timeLimitMs = timeLimitMs;
         // Definimos la búsqueda local con el esquema habitual
         this.bestSolutionFound = solution;
@@ -38,7 +39,7 @@ public class LocalSearch {
             for (Integer node : nodesNotInSolution) {
                 if(improved) break;
                 long currentTime = Instant.now().toEpochMilli();
-                if(currentTime - initTime.toEpochMilli() >= this.timeLimitMs) {
+                if(currentTime - initTime.toEpochMilli() >= this.timeLimitMs || Duration.between(startTime, Instant.now()).toMillis() > TestRunner.TIME_LIMIT_MS) {
                     //System.out.println("LocalSearch: Time limit reached after " + (currentTime - initTime.toEpochMilli()) + "ms");
                     return; // Exit constructor early if time limit reached
                 }
@@ -84,6 +85,9 @@ public class LocalSearch {
                             }
                         } else {
                             infeasibleNeighbors++;
+                        }
+                        if(Duration.between(startTime, Instant.now()).toMillis() > TestRunner.TIME_LIMIT_MS) {
+                            return;
                         }
                     }
                 }

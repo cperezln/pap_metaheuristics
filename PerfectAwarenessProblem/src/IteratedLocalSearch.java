@@ -13,7 +13,7 @@ public class IteratedLocalSearch {
     private Random random;
     private long timeToBestMs = -1; // Time when best solution was found
     private boolean useBridgeSwap = true; // Toggle between perturbation methods
-    private PrintWriter timeToBestWriter; // Writer for time to best output
+    private PrintWriter timeToBestWriter,contributionWriter; // Writer for time to best output
     // Centrality factors for thread-safe solution creation
     private double betFactor;
     private double degFactor;
@@ -97,14 +97,14 @@ public class IteratedLocalSearch {
         return solution;
     }
 
-    public Solution localSearch(Solution solution) {
+    public Solution localSearch(Solution solution, Instant startTime) {
         solution.removeUnnedeed();
         Solution improvedSol = solution;
         int initialValue = improvedSol.solutionValue();
 
         if (improvedSol.solutionValue() >= 2) {
             Solution filteredSol = new FilterUnnecesaryNodes(improvedSol, eval).bestSolutionFound;
-            LocalSearch ls = new LocalSearch(filteredSol, eval, TestRunner.LOCAL_SEARCH_TIME_LIMIT_MS);
+            LocalSearch ls = new LocalSearch(filteredSol, eval, TestRunner.LOCAL_SEARCH_TIME_LIMIT_MS,startTime);
             improvedSol = ls.bestSolutionFound;
             improvedSol.removeUnnedeed();
         }
@@ -286,9 +286,9 @@ public class IteratedLocalSearch {
             timeToBestDir.mkdirs();
         }
         String timeToBestFileName = "time_to_best/time_to_best_" + instanceName + ".txt";
+        String methodContributionName = "time_to_best/contribution_" + instanceName + ".txt";
         try {
             timeToBestWriter = new PrintWriter(new FileWriter(timeToBestFileName));
-            timeToBestWriter.println("Instance: " + instanceName);
             timeToBestWriter.println("Time_to_Best(ms)\tSolution_Value\tIteration");
         } catch (IOException e) {
             System.err.println("Error creating time to best file: " + e.getMessage());
@@ -297,86 +297,101 @@ public class IteratedLocalSearch {
 
         // Generar solución inicial
         System.out.println("ILS: Starting initial construction and local search...");
-        Solution currentSolution = constructivePhase();
-        currentSolution = localSearch(currentSolution);
-
-        Solution bestSolution = new Solution(currentSolution.getBitwiseRepresentation());
-        int bestValue = bestSolution.solutionValue();
-
-        // Record initial solution as first improvement
-        long initialTimeToBest = Duration.between(startTime, Instant.now()).toMillis();
-        timeToBestMs = initialTimeToBest;
-        if (timeToBestWriter != null) {
-            timeToBestWriter.println(initialTimeToBest + "\t" + bestValue + "\t0");
+        Solution bestSolution = new Solution();
+        if(instance.graph.size()==0) {
+            bestSolution.addNodeUnique(instance.getUniqueNode());
+            // Record initial solution as first improvement
+            long initialTimeToBest = Duration.between(startTime, Instant.now()).toMillis();
+            timeToBestMs = initialTimeToBest;
+            timeToBestWriter.println(initialTimeToBest + "\t" + 1 + "\t0");
             timeToBestWriter.flush();
         }
-        System.out.println("ILS: Initial time to best: " + initialTimeToBest + " ms");
+        else {
+            Solution currentSolution = constructivePhase();
+            int constructiveOF = currentSolution.solutionValue();
+            currentSolution = localSearch(currentSolution,startTime);
+            int lsOF = currentSolution.solutionValue();
+            bestSolution = new Solution(currentSolution.getBitwiseRepresentation());
+            int bestValue = bestSolution.solutionValue();
 
-        System.out.println(String.format("ILS: Initial solution value: %d", bestValue));
+            // Record initial solution as first improvement
+            long initialTimeToBest = Duration.between(startTime, Instant.now()).toMillis();
+            timeToBestMs = initialTimeToBest;
+            timeToBestWriter.println(initialTimeToBest + "\t" + bestValue + "\t0");
+            timeToBestWriter.flush();
+            System.out.println("ILS: Initial time to best: " + initialTimeToBest + " ms");
 
-        int iteration = 0;
-        int iterationsWithoutImprovement = 0;
-        final int MAX_ITERATIONS_WITHOUT_IMPROVEMENT = 50000;
+            System.out.println(String.format("ILS: Initial solution value: %d", bestValue));
 
-        while (Duration.between(startTime, Instant.now()).toMillis() < TestRunner.TIME_LIMIT_MS) {
-            iteration++;
+            int iteration = 0;
+            int iterationsWithoutImprovement = 0;
+            final int MAX_ITERATIONS_WITHOUT_IMPROVEMENT = 50000;
 
-            // Perturbación - alternar entre métodos
-            Solution perturbedSolution;
-            //if (useBridgeSwap && iteration % 3 == 0) { // Use bridge swap every 3rd iteration
-            //    perturbedSolution = bridgeSwapPerturbation(currentSolution);
-            //} else {
-                perturbedSolution = perturbation(currentSolution);
-            //}
-            //System.out.println("ILS: Iteration " + iteration + " - After perturbation: " + perturbedSolution.solutionValue());
+            while (Duration.between(startTime, Instant.now()).toMillis() < TestRunner.TIME_LIMIT_MS) {
+                iteration++;
 
-            // Búsqueda local
-            Solution localOptimum = localSearch(perturbedSolution);
+                // Perturbación - alternar entre métodos
+                Solution perturbedSolution;
+                //if (useBridgeSwap && iteration % 3 == 0) { // Use bridge swap every 3rd iteration
+                //    perturbedSolution = bridgeSwapPerturbation(currentSolution);
+                //} else {
+                    perturbedSolution = perturbation(currentSolution);
+                //}
+                //System.out.println("ILS: Iteration " + iteration + " - After perturbation: " + perturbedSolution.solutionValue());
 
-            // Criterio de aceptación: aceptar si es mejor o igual
-            if (localOptimum.solutionValue() <= currentSolution.solutionValue()) {
-                currentSolution = localOptimum;
-                iterationsWithoutImprovement = 0;
+                // Búsqueda local
+                Solution localOptimum = localSearch(perturbedSolution,startTime);
 
-                // Actualizar mejor solución si es necesario
-                if (localOptimum.solutionValue() < bestValue) {
-                    bestSolution = new Solution(localOptimum.getBitwiseRepresentation());
-                    bestValue = bestSolution.solutionValue();
+                // Criterio de aceptación: aceptar si es mejor o igual
+                if (localOptimum.solutionValue() <= currentSolution.solutionValue()) {
+                    currentSolution = localOptimum;
+                    iterationsWithoutImprovement = 0;
 
-                    // Record time to best for this improvement
-                    long currentTimeToBest = Duration.between(startTime, Instant.now()).toMillis();
-                    timeToBestMs = currentTimeToBest;
+                    // Actualizar mejor solución si es necesario
+                    if (localOptimum.solutionValue() < bestValue) {
+                        bestSolution = new Solution(localOptimum.getBitwiseRepresentation());
+                        bestValue = bestSolution.solutionValue();
 
-                    if (timeToBestWriter != null) {
+                        // Record time to best for this improvement
+                        long currentTimeToBest = Duration.between(startTime, Instant.now()).toMillis();
+                        timeToBestMs = currentTimeToBest;
+
                         timeToBestWriter.println(currentTimeToBest + "\t" + bestValue + "\t" + iteration);
                         timeToBestWriter.flush();
+
+
+                        System.out.println("ILS: New best solution found at iteration " + iteration + " with value: " + bestValue);
+                        System.out.println("ILS: Time to best: " + currentTimeToBest + " ms");
                     }
-
-                    System.out.println("ILS: New best solution found at iteration " + iteration + " with value: " + bestValue);
-                    System.out.println("ILS: Time to best: " + currentTimeToBest + " ms");
+                } else {
+                    iterationsWithoutImprovement++;
                 }
-            } else {
-                iterationsWithoutImprovement++;
-            }
 
-            // Reinicio si hay demasiadas iteraciones sin mejora
-            if (iterationsWithoutImprovement >= MAX_ITERATIONS_WITHOUT_IMPROVEMENT) {
-                //System.out.println(String.format("ILS: Restart at iteration %d - reconstructing solution...", iteration));
-                currentSolution = constructivePhase();
-                currentSolution = localSearch(currentSolution);
-                iterationsWithoutImprovement = 0;
-                //System.out.println(String.format("ILS: After restart, current solution value: %d", currentSolution.solutionValue()));
+                // Reinicio si hay demasiadas iteraciones sin mejora
+                if (iterationsWithoutImprovement >= MAX_ITERATIONS_WITHOUT_IMPROVEMENT) {
+                    //System.out.println(String.format("ILS: Restart at iteration %d - reconstructing solution...", iteration));
+                    currentSolution = constructivePhase();
+                    currentSolution = localSearch(currentSolution,startTime);
+                    iterationsWithoutImprovement = 0;
+                    //System.out.println(String.format("ILS: After restart, current solution value: %d", currentSolution.solutionValue()));
+                }
+            }
+            long totalTime = Duration.between(startTime, Instant.now()).toMillis();
+            System.out.println(String.format("ILS: Completed %d iterations in %d ms", iteration, totalTime));
+            System.out.println(String.format("ILS: Best solution value: %d", bestValue));
+
+            try {
+                contributionWriter = new PrintWriter(new FileWriter(methodContributionName));
+                contributionWriter.println("Method\tSolution_Value");
+                contributionWriter.println(constructiveOF + "\t" + lsOF + "\t" + bestValue);
+                contributionWriter.flush();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
         }
 
-        long totalTime = Duration.between(startTime, Instant.now()).toMillis();
-        System.out.println(String.format("ILS: Completed %d iterations in %d ms", iteration, totalTime));
-        System.out.println(String.format("ILS: Best solution value: %d", bestValue));
-
-        // Close time to best writer
-        if (timeToBestWriter != null) {
-            timeToBestWriter.close();
-        }
+        timeToBestWriter.close();
+        contributionWriter.close();
 
         // Verify solution feasibility using SpreadingProcessCheck
         SpreadingProcessCheck checker = new SpreadingProcessCheck(instance);
