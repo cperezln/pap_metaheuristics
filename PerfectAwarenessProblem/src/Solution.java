@@ -78,6 +78,17 @@ public class Solution {
         instance.setState(node, 0);
     }
 
+    /**
+     * Method specifically for perturbation that actually removes the node
+     * BigInteger is immutable, so we need to reassign the result
+     */
+    public void removeNodeForPerturbation(int node) {
+        this.solutionBw = this.solutionBw.clearBit(node); // BigInteger is immutable!
+        this.solutionValue = this.solutionBw.bitCount();
+        this.numberAware = this.solutionValue;
+        instance.setState(node, 0);
+    }
+
     public boolean isIn(int node) {
         return this.solutionBw.testBit(node);
     }
@@ -153,7 +164,4 @@ public class Solution {
     public void setAware(int nAware) { this.numberAware = nAware; }
 
     public int getAware() { return this.numberAware; }
-
-    // STATIC METHODS
-
 }

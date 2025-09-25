@@ -1,6 +1,4 @@
 import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.HashSet;
 
 
 public class SpreadingProcessOptimize {
@@ -13,11 +11,12 @@ public class SpreadingProcessOptimize {
 
 
     public boolean isSolution(Solution sol) {
-        int[] spreaderCount = new int[instance.getNumberNodes()];  // Para llevar la cuenta de vecinos propagadores
-        int[] awareCount = new int[instance.getNumberNodes()];  // Para llevar la cuenta de vecinos propagadores
+        int[] spreaderCount = new int[instance.getNumberNodes()];
+        int[] awareCount = new int[instance.getNumberNodes()];
+        BigInteger[] checkSpreaders = new BigInteger[instance.getNumberNodes()];
+        boolean[] visited = new boolean[instance.getNumberNodes()];
         // Auxiliar: para no contar spreaders de más
         /*---------------------------------------------------*/
-        BigInteger[] checkSpreaders = new BigInteger[instance.getNumberNodes()];
         BigInteger nextPossible = sol.getBitwiseRepresentation();
         int index = nextPossible.getLowestSetBit();
         if (index != -1) {
@@ -40,7 +39,6 @@ public class SpreadingProcessOptimize {
         BigInteger qSpreaders = sol.getBitwiseRepresentation();
         int awareSize = sol.getAware();
         BigInteger aware = sol.getBitwiseRepresentation();
-        boolean[] visited = new boolean[instance.getNumberNodes()];
         BigInteger spreadersTaupbw = spreadersTaubw;
         while(!qSpreaders.equals(BigInteger.ZERO) && awareSize != instance.getNumberNodes()) {
             spreadersTaubw = spreadersTaupbw;

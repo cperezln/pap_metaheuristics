@@ -102,7 +102,6 @@ public class Instance {
 
     public Instance(File file, String c) {
         try {
-            this.setCentrality(c);
             Scanner reader = new Scanner(file);
             seed = Integer.parseInt(reader.nextLine());
             k = Integer.parseInt(reader.nextLine());
@@ -116,6 +115,7 @@ public class Instance {
                 int[] edge = {Integer.parseInt(sEdge[0]), Integer.parseInt(sEdge[1])};
                 edgeList.add(edge);
             }
+            //numberNodes = givenNumberNodes;
             ArrayList<int[]> newEdges = preprocessing(edgeList, givenNumberNodes);
             numberEdges = newEdges.size();
             for(int[] edge: newEdges) {
@@ -137,6 +137,7 @@ public class Instance {
                 }
             }
             numberNodes = graph.size();
+            //this.setCentrality(c);
             this.setLeafNodes();
         }
         catch (Exception e) {
@@ -165,33 +166,49 @@ public class Instance {
         return maxDeg;
     }
 
-    public void setCentrality(String file) throws FileNotFoundException {
-        String inPath = "/home/cristian/Escritorio/TFM/pap_metaheuristics//centralities/";
-        HashMap<Integer, Double> bw = new HashMap<>();
-        Scanner reader2 = new Scanner(new File(inPath + "betweeness/" + file));
+    public void setCentrality(String file) {
+        String inPath = System.getProperty("user.dir") + "/centralities/";
         HashMap<Integer, Double> betMap = new HashMap<>();
         HashMap<Integer, Double> degMap = new HashMap<>();
         HashMap<Integer, Double> eigMap = new HashMap<>();
-        while (reader2.hasNext()) {
-            String[] line = reader2.nextLine().split(" ");
-            betMap.put(Integer.parseInt(line[0]), Double.parseDouble(line[1]));
-        }
-        reader2 = new Scanner(new File(inPath + "degree/" + file));
-        while (reader2.hasNext()) {
-            String[] line = reader2.nextLine().split(" ");
-            degMap.put(Integer.parseInt(line[0]), Double.parseDouble(line[1]));
-        }
-        reader2 = new Scanner(new File(inPath + "eigenvector/" + file));
-        while (reader2.hasNext()) {
-            String[] line = reader2.nextLine().split(" ");
-            eigMap.put(Integer.parseInt(line[0]), Double.parseDouble(line[1]));
-        }
-        for(Map.Entry<Integer, Double> i: degMap.entrySet()) {
-            double betCet = betMap.get(i.getKey());
-            double eigCet = eigMap.get(i.getKey());
-            double degCet = i.getValue();
-            double[] arrCet = {betCet, degCet, eigCet};
-            this.centrality.put(i.getKey(), arrCet);
+
+        // Try to load centrality files, if they don't exist, use default values
+        try {
+            Scanner reader2 = new Scanner(new File(inPath + "betweeness/" + file));
+            while (reader2.hasNext()) {
+                String[] line = reader2.nextLine().split(" ");
+                betMap.put(Integer.parseInt(line[0]), Double.parseDouble(line[1]));
+            }
+            reader2.close();
+
+            reader2 = new Scanner(new File(inPath + "degree/" + file));
+            while (reader2.hasNext()) {
+                String[] line = reader2.nextLine().split(" ");
+                degMap.put(Integer.parseInt(line[0]), Double.parseDouble(line[1]));
+            }
+            reader2.close();
+
+            reader2 = new Scanner(new File(inPath + "eigenvector/" + file));
+            while (reader2.hasNext()) {
+                String[] line = reader2.nextLine().split(" ");
+                eigMap.put(Integer.parseInt(line[0]), Double.parseDouble(line[1]));
+            }
+            reader2.close();
+
+            for(Map.Entry<Integer, Double> i: degMap.entrySet()) {
+                double betCet = betMap.get(i.getKey());
+                double eigCet = eigMap.get(i.getKey());
+                double degCet = i.getValue();
+                double[] arrCet = {betCet, degCet, eigCet};
+                this.centrality.put(i.getKey(), arrCet);
+            }
+        } catch (FileNotFoundException e) {
+            // If centrality files don't exist, use default values (0.5 for all)
+            System.out.println("Warning: Centrality files not found. Using default values.");
+            for(int i = 0; i < this.numberNodes; i++) {
+                double[] arrCet = {0.5, 0.5, 0.5}; // Default centrality values
+                this.centrality.put(i, arrCet);
+            }
         }
     }
 

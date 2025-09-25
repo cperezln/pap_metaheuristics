@@ -1,0 +1,6 @@
+/PerfectAwarenessProblem/.idea
+*.class
+/solutionsv7/ils_solutions
+/PerfectAwarenessProblem/time_to_best
+previous_work/.DS_Store
+previous_work/instance_test/.DS_Store
