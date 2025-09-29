@@ -115,6 +115,7 @@ public class IteratedLocalSearch {
     }
 
     public Solution perturbation(Solution solution) {
+        Instant perturbationStart = Instant.now();
         Solution perturbedSol = new Solution(solution.getBitwiseRepresentation());
 
         // Obtener nodos en la solución de forma más eficiente
@@ -148,6 +149,11 @@ public class IteratedLocalSearch {
         // Reconstruir la solución añadiendo nodos aleatorios
         instance.resetState(perturbedSol);
         while (!eval.isSolution(perturbedSol)) {
+            // Check time limit - if exceeded, return original solution
+            if (Duration.between(perturbationStart, Instant.now()).toMillis() > TestRunner.TIME_LIMIT_MS) {
+                //System.out.println("ILS: Perturbation timeout - returning original solution");
+                return solution;
+            }
             addRandomNode(perturbedSol);
         }
 
@@ -198,7 +204,13 @@ public class IteratedLocalSearch {
 
         // Phase 2: Add random nodes for diversification
         instance.resetState(perturbedSol);
+        Instant reconstructionStart = Instant.now();
         while (!eval.isSolution(perturbedSol)) {
+            // Check time limit - if exceeded, return original solution
+            if (Duration.between(reconstructionStart, Instant.now()).toMillis() > TestRunner.TIME_LIMIT_MS) {
+                //System.out.println("ILS: Bridge Swap Perturbation timeout - returning original solution");
+                return solution;
+            }
             addRandomNode(perturbedSol);
         }
 
@@ -305,6 +317,15 @@ public class IteratedLocalSearch {
             timeToBestMs = initialTimeToBest;
             timeToBestWriter.println(initialTimeToBest + "\t" + 1 + "\t0");
             timeToBestWriter.flush();
+            try {
+                contributionWriter = new PrintWriter(new FileWriter(methodContributionName));
+                contributionWriter.println("Method\tSolution_Value");
+                contributionWriter.println("1\t1\t1");
+                contributionWriter.flush();
+                contributionWriter.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
         else {
             Solution currentSolution = constructivePhase();
@@ -385,13 +406,13 @@ public class IteratedLocalSearch {
                 contributionWriter.println("Method\tSolution_Value");
                 contributionWriter.println(constructiveOF + "\t" + lsOF + "\t" + bestValue);
                 contributionWriter.flush();
+                contributionWriter.close();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
 
         timeToBestWriter.close();
-        contributionWriter.close();
 
         // Verify solution feasibility using SpreadingProcessCheck
         SpreadingProcessCheck checker = new SpreadingProcessCheck(instance);

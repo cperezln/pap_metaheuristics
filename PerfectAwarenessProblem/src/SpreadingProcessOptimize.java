@@ -1,12 +1,25 @@
 import java.math.BigInteger;
+import java.time.Duration;
+import java.time.Instant;
 
 
 public class SpreadingProcessOptimize {
 
     private Instance instance;
+    private Instant startTime;
 
     public SpreadingProcessOptimize(Instance i) {
         this.instance = i;
+        this.startTime = null;
+    }
+
+    public SpreadingProcessOptimize(Instance i, Instant startTime) {
+        this.instance = i;
+        this.startTime = startTime;
+    }
+
+    public void setStartTime(Instant startTime) {
+        this.startTime = startTime;
     }
 
 
@@ -41,6 +54,10 @@ public class SpreadingProcessOptimize {
         BigInteger aware = sol.getBitwiseRepresentation();
         BigInteger spreadersTaupbw = spreadersTaubw;
         while(!qSpreaders.equals(BigInteger.ZERO) && awareSize != instance.getNumberNodes()) {
+            // Check time limit - if exceeded, return false to allow algorithm to terminate
+            //if (startTime != null && Duration.between(startTime, Instant.now()).toMillis() > TestRunner.TIME_LIMIT_MS) {
+            //    return false;
+            //}
             spreadersTaubw = spreadersTaupbw;
             int node = qSpreaders.getLowestSetBit();
             qSpreaders = qSpreaders.clearBit(node);
