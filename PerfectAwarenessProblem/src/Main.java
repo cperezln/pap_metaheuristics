@@ -75,6 +75,7 @@ public class Main {
         double betcent = 0;
         double degcent = 0;
         double eigcent = 0;
+         int reconstructionIterations = 1; // Default value
 
         // Best params IRACE
         if(configIrace == 1) {
@@ -82,12 +83,14 @@ public class Main {
             betcent = 0.4915;
             degcent = 0.9034;
             eigcent = 0.5253;
+            reconstructionIterations = 10;
         }
         if(configIrace == 2) {
             paramAlpha = 0.2412;
             betcent = 0.4915;
             degcent = 0.9034;
             eigcent = 0.5253;
+            reconstructionIterations = 10;
         }
 
         // Determine solution directory - use current working directory with solutions subfolder
@@ -106,7 +109,7 @@ public class Main {
 
         try {
             // Process the single instance file
-            SolutionResult result = solveInstance(instanceFile, algorithm, paramAlpha, betcent, degcent, eigcent);
+            SolutionResult result = solveInstance(instanceFile, algorithm, paramAlpha, betcent, degcent, eigcent, reconstructionIterations);
 
             // Create output file name based on instance name and algorithm
             String instanceBaseName = instanceFile.getName().replaceFirst("\\.[^.]+$", ""); // Remove extension
@@ -150,6 +153,7 @@ public class Main {
         double betcent = 0;
         double degcent = 0;
         double eigcent = 0;
+        int reconstructionIterations = 1; // Default value
 
         // Best params IRACE
         if(configIrace == 1) {
@@ -157,12 +161,14 @@ public class Main {
             betcent = 0.4915;
             degcent = 0.9034;
             eigcent = 0.5253;
+            reconstructionIterations = 10; // Default for config 1
         }
         if(configIrace == 2) {
             paramAlpha = 0.2412;
             betcent = 0.4915;
             degcent = 0.9034;
             eigcent = 0.5253;
+            reconstructionIterations = 10; // Default for config 2
         }
 
         String solutionDir = algorithm.equals("ILS") ? "/solutionsv7/ils_solutions" : "/solutionsv7/grasp_solutions";
@@ -203,7 +209,7 @@ public class Main {
                 continue;
             }
             try {
-                SolutionResult result = solveInstance(instanceFile, algorithm, paramAlpha, betcent, degcent, eigcent);
+                SolutionResult result = solveInstance(instanceFile, algorithm, paramAlpha, betcent, degcent, eigcent, reconstructionIterations);
                 results.add(result);
             } catch (Exception e) {
                 System.err.println("Error processing instance " + instanceFile.getName() + ": " + e.getMessage());
@@ -235,7 +241,7 @@ public class Main {
     }
 
     private static SolutionResult solveInstance(File instanceFile, String algorithm, double paramAlpha,
-                                                       double betcent, double degcent, double eigcent) {
+                                                       double betcent, double degcent, double eigcent, int reconstructionIterations) {
         // Create local copies to avoid any potential shared reference issues
         File localInstanceFile = new File(instanceFile.getAbsolutePath());
         String localAlgorithm = new String(algorithm);
@@ -243,6 +249,7 @@ public class Main {
         double localBetcent = betcent;
         double localDegcent = degcent;
         double localEigcent = eigcent;
+        int localReconstructionIterations = reconstructionIterations;
         try {
             // Create NEW instance and evaluator for each thread - thread safe by isolation
             Instance instance = new Instance(localInstanceFile, localInstanceFile.getName());
@@ -257,7 +264,7 @@ public class Main {
 
             // NO static variables - pass parameters directly to algorithms
             if (localAlgorithm.equals("ILS")) {
-                IteratedLocalSearch ilsExec = new IteratedLocalSearch(localParamAlpha, instance, eval, localBetcent, localDegcent, localEigcent);
+                IteratedLocalSearch ilsExec = new IteratedLocalSearch(localParamAlpha, instance, eval, localBetcent, localDegcent, localEigcent, localReconstructionIterations);
                 bestSolutionFound = ilsExec.run();
             } else {
                 int nIterGrasp = 150;
