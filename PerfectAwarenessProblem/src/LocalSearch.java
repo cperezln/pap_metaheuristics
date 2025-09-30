@@ -79,7 +79,7 @@ public class LocalSearch {
                             Solution neighbor = new FilterUnnecesaryNodes(finalSol, e).bestSolutionFound;
                             if (neighbor.solutionValue() < this.bestSolutionFound.solutionValue()) {
                                 int improvement = this.bestSolutionFound.solutionValue() - neighbor.solutionValue();
-                                //System.out.println("LocalSearch: Improvement found! " + this.bestSolutionFound.solutionValue() + " -> " + neighbor.solutionValue() + " (gain: " + improvement + ") after " + totalNeighborsEvaluated + " evaluations");
+                                System.out.println("LocalSearch: Improvement found! " + this.bestSolutionFound.solutionValue() + " -> " + neighbor.solutionValue() + " (gain: " + improvement + ") after " + totalNeighborsEvaluated + " evaluations");
                                 this.bestSolutionFound = neighbor;
                                 improved = true;
                             }

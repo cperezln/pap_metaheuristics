@@ -11,7 +11,7 @@ public class Instance {
     private int numberEdges;
     private HashMap<Integer, Integer> degreeMap = new HashMap<>();
     private HashMap<Integer, double[]> centrality = new HashMap<>();
-    private HashMap<Integer, Integer> state = new HashMap<>(); // 0: ignorant, 1: aware, 2: spreader
+    private int[] state; // 0: ignorant, 1: aware, 2: spreader
     private HashSet<Integer> leafNodes = new HashSet<>();
     private int seed, k;
     HashMap<Integer, ArrayList<Integer>> graph = new HashMap<>();
@@ -140,11 +140,11 @@ public class Instance {
                     degreeMap.put(edge[1], degreeMap.getOrDefault(edge[1], Integer.valueOf(0)) + 1);
                     graph.put(edge[0], edgeListStart);
                     graph.put(edge[1], edgeListEnd);
-                    state.put(edge[0], 0);
-                    state.put(edge[1], 0);
                 }
             }
             numberNodes = graph.size();
+            state = new int[numberNodes];
+            // Arrays.fill(state, 0); // Not needed, default is 0
             this.setCentrality(c);
             this.setLeafNodes();
         }
@@ -220,33 +220,32 @@ public class Instance {
         }
     }
 
-    public void setState(int node, int state) {
-        switch (state) {
+    public void setState(int node, int newState) {
+        switch (newState) {
             case 0:
-                this.state.put(node, 0);
+                this.state[node] = 0;
                 break;
             case 1:
-                if (this.state.get(node) <= 1) {
-                    this.state.put(node, 1);
+                if (this.state[node] <= 1) {
+                    this.state[node] = 1;
                     break;
                 }
             case 2:
-                if(this.state.get(node) <= 2) {
-                    this.state.put(node, 2);
+                if(this.state[node] <= 2) {
+                    this.state[node] = 2;
                     break;
                 }
         }
     }
 
     public void resetState(Solution sol) {
-        this.state = new HashMap<>();
         for(int node = 0; node < numberNodes; node++) {
-         if (sol.isIn(node)) { this.state.put(node, 2); }
-         else { this.state.put(node, 0); }
+         if (sol.isIn(node)) { this.state[node] = 2; }
+         else { this.state[node] = 0; }
         }
     }
 
-    public int getNodeState(int node) { return this.state.get(node); }
+    public int getNodeState(int node) { return this.state[node]; }
 
     public boolean isLeaf(int node) { return this.leafNodes.contains(node);}
 
