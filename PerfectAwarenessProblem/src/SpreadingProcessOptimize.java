@@ -24,66 +24,68 @@ public class SpreadingProcessOptimize {
 
 
     public boolean isSolution(Solution sol) {
-        int[] spreaderCount = new int[instance.getNumberNodes()];
-        int[] awareCount = new int[instance.getNumberNodes()];
-        BigInteger[] checkSpreaders = new BigInteger[instance.getNumberNodes()];
-        boolean[] visited = new boolean[instance.getNumberNodes()];
+        int n = instance.getNumberNodes();
+        int[] spreaderCount = new int[n];
+        int[] awareCount = new int[n];
+        int[][] checkSpreaders = new int[n][n];
+        boolean[] visited = new boolean[n];
+        boolean[] isSpreaderTaubw = new boolean[n];
+        boolean[] isSpreaderTaupbw = new boolean[n];
+        boolean[] isAware = new boolean[n];
+        int[] qSpreaders = new int[n];
+        int qSize = 0;
+
         // Auxiliar: para no contar spreaders de más
         /*---------------------------------------------------*/
-        BigInteger nextPossible = sol.getBitwiseRepresentation();
-        int index = nextPossible.getLowestSetBit();
+        int awareSize = 0;
+        BigInteger initialSeeds = sol.getBitwiseRepresentation();
+        int index = initialSeeds.getLowestSetBit();
         if (index != -1) {
             do {
+                isSpreaderTaubw[index] = true;
+                isSpreaderTaupbw[index] = true;
+                isAware[index] = true;
+                awareSize++;
+                qSpreaders[qSize++] = index;
                 for(int neigh: instance.graph.get(index)) {
-                    BigInteger actual = checkSpreaders[neigh];
-                    if(actual == null) actual = BigInteger.ZERO;
-                    actual = actual.setBit(index);
-                    checkSpreaders[neigh] = actual;
-                    spreaderCount[neigh]++;
+                    if(checkSpreaders[neigh][index] == 0) {
+                        checkSpreaders[neigh][index] = 1;
+                        spreaderCount[neigh]++;
+                    }
                 }
-                nextPossible = nextPossible.xor(BigInteger.ONE.shiftLeft(index));
-                index = nextPossible.getLowestSetBit();
+                initialSeeds = initialSeeds.xor(BigInteger.ONE.shiftLeft(index));
+                index = initialSeeds.getLowestSetBit();
             } while (index != -1);
         }
-        BigInteger[] checkAware = checkSpreaders;
+        int[][] checkAware = checkSpreaders;
         awareCount = spreaderCount;
         /*---------------------------------------------------*/
-        BigInteger spreadersTaubw = sol.getBitwiseRepresentation();
-        BigInteger qSpreaders = sol.getBitwiseRepresentation();
-        int awareSize = sol.getAware();
-        BigInteger aware = sol.getBitwiseRepresentation();
-        BigInteger spreadersTaupbw = spreadersTaubw;
-        while(!qSpreaders.equals(BigInteger.ZERO) && awareSize != instance.getNumberNodes()) {
-            // Check time limit - if exceeded, return false to allow algorithm to terminate
-            //if (startTime != null && Duration.between(startTime, Instant.now()).toMillis() > TestRunner.TIME_LIMIT_MS) {
-            //    return false;
-            //}
-            spreadersTaubw = spreadersTaupbw;
-            int node = qSpreaders.getLowestSetBit();
-            qSpreaders = qSpreaders.clearBit(node);
+        int qHead = 0;
+
+        while(qHead < qSize && awareSize != n) {
+            int node = qSpreaders[qHead++];
             if(!visited[node]) {
                 visited[node] = true;
                 for (Integer neigh : instance.graph.get(node)) {
-                    // Become aware if your neigbor
-                    if(!aware.testBit(neigh)) {
-                        aware = aware.setBit(neigh);
+                    // Become aware if your neighbor
+                    if(!isAware[neigh]) {
+                        isAware[neigh] = true;
                         awareSize++;
                         this.instance.setState(neigh, 1);
                     }
-                    if(checkAware[node] == null) checkAware[node] = BigInteger.ZERO;
-                    if(!checkAware[node].testBit(neigh)) {
-                        checkAware[node] = checkAware[node].setBit(neigh);
+                    if(checkAware[node][neigh] == 0) {
+                        checkAware[node][neigh] = 1;
                         awareCount[node]++;
                     }
                     // The number of spreaders around neigh increments, as node is a spreader
-                    if(checkSpreaders[neigh] == null) checkSpreaders[neigh] = BigInteger.ZERO;
-                    if(!checkSpreaders[neigh].testBit(node)) {
-                        checkSpreaders[neigh] = checkSpreaders[neigh].setBit(node);
+                    if(checkSpreaders[neigh][node] == 0) {
+                        checkSpreaders[neigh][node] = 1;
                         spreaderCount[neigh]++;
                     }
-                    if (!spreadersTaubw.testBit(neigh) && spreaderCount[neigh] >= instance.graph.get(neigh).size() * 0.5) {
-                        spreadersTaupbw = spreadersTaupbw.setBit(neigh);
-                        qSpreaders = qSpreaders.setBit(neigh);
+                    if (!isSpreaderTaubw[neigh] && spreaderCount[neigh] >= instance.graph.get(neigh).size() * 0.5) {
+                        isSpreaderTaupbw[neigh] = true;
+                        isSpreaderTaubw[neigh] = true;
+                        qSpreaders[qSize++] = neigh;
                         this.instance.setState(neigh, 2);
                     }
                 }
@@ -91,7 +93,7 @@ public class SpreadingProcessOptimize {
         }
         sol.setAware(awareSize);
         sol.setAwareCount(awareCount);
-        return awareSize == instance.getNumberNodes();
+        return awareSize == n;
     }
 
     public static boolean checkEqualSets(boolean[] s, boolean[] sp) {
