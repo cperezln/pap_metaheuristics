@@ -8,14 +8,37 @@ public class SpreadingProcessOptimize {
     private Instance instance;
     private Instant startTime;
 
+    // Reusable arrays to avoid allocation overhead
+    private int[] spreaderCount;
+    private int[] awareCount;
+    private boolean[][] checkSpreaders;
+    private boolean[] visited;
+    private boolean[] isSpreaderTaubw;
+    private boolean[] isSpreaderTaupbw;
+    private boolean[] isAware;
+    private int[] qSpreaders;
+
     public SpreadingProcessOptimize(Instance i) {
         this.instance = i;
         this.startTime = null;
+        initializeArrays(10000);
     }
 
     public SpreadingProcessOptimize(Instance i, Instant startTime) {
         this.instance = i;
         this.startTime = startTime;
+        initializeArrays(10000);
+    }
+
+    private void initializeArrays(int maxSize) {
+        spreaderCount = new int[maxSize];
+        awareCount = new int[maxSize];
+        checkSpreaders = new boolean[maxSize][maxSize];
+        visited = new boolean[maxSize];
+        isSpreaderTaubw = new boolean[maxSize];
+        isSpreaderTaupbw = new boolean[maxSize];
+        isAware = new boolean[maxSize];
+        qSpreaders = new int[maxSize];
     }
 
     public void setStartTime(Instant startTime) {
@@ -25,14 +48,20 @@ public class SpreadingProcessOptimize {
 
     public boolean isSolution(Solution sol) {
         int n = instance.getNumberNodes();
-        int[] spreaderCount = new int[n];
-        int[] awareCount = new int[n];
-        int[][] checkSpreaders = new int[n][n];
-        boolean[] visited = new boolean[n];
-        boolean[] isSpreaderTaubw = new boolean[n];
-        boolean[] isSpreaderTaupbw = new boolean[n];
-        boolean[] isAware = new boolean[n];
-        int[] qSpreaders = new int[n];
+
+        // Clear arrays for reuse
+        for (int i = 0; i < n; i++) {
+            spreaderCount[i] = 0;
+            awareCount[i] = 0;
+            visited[i] = false;
+            isSpreaderTaubw[i] = false;
+            isSpreaderTaupbw[i] = false;
+            isAware[i] = false;
+            for (int j = 0; j < n; j++) {
+                checkSpreaders[i][j] = false;
+            }
+        }
+
         int qSize = 0;
 
         // Auxiliar: para no contar spreaders de más
@@ -48,8 +77,8 @@ public class SpreadingProcessOptimize {
                 awareSize++;
                 qSpreaders[qSize++] = index;
                 for(int neigh: instance.graph.get(index)) {
-                    if(checkSpreaders[neigh][index] == 0) {
-                        checkSpreaders[neigh][index] = 1;
+                    if(!checkSpreaders[neigh][index]) {
+                        checkSpreaders[neigh][index] = true;
                         spreaderCount[neigh]++;
                     }
                 }
@@ -57,7 +86,6 @@ public class SpreadingProcessOptimize {
                 index = initialSeeds.getLowestSetBit();
             } while (index != -1);
         }
-        int[][] checkAware = checkSpreaders;
         awareCount = spreaderCount;
         /*---------------------------------------------------*/
         int qHead = 0;
@@ -73,13 +101,13 @@ public class SpreadingProcessOptimize {
                         awareSize++;
                         this.instance.setState(neigh, 1);
                     }
-                    if(checkAware[node][neigh] == 0) {
-                        checkAware[node][neigh] = 1;
+                    if(!checkSpreaders[node][neigh]) {
+                        checkSpreaders[node][neigh] = true;
                         awareCount[node]++;
                     }
                     // The number of spreaders around neigh increments, as node is a spreader
-                    if(checkSpreaders[neigh][node] == 0) {
-                        checkSpreaders[neigh][node] = 1;
+                    if(!checkSpreaders[neigh][node]) {
+                        checkSpreaders[neigh][node] = true;
                         spreaderCount[neigh]++;
                     }
                     if (!isSpreaderTaubw[neigh] && spreaderCount[neigh] >= instance.graph.get(neigh).size() * 0.5) {
@@ -92,7 +120,10 @@ public class SpreadingProcessOptimize {
             }
         }
         sol.setAware(awareSize);
-        sol.setAwareCount(awareCount);
+        // Create a copy of awareCount for this solution
+        int[] awareCountCopy = new int[n];
+        System.arraycopy(awareCount, 0, awareCountCopy, 0, n);
+        sol.setAwareCount(awareCountCopy);
         return awareSize == n;
     }
 
