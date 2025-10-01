@@ -137,9 +137,20 @@ public class IteratedLocalSearch {
     }
 
     public Solution constructivePhase() {
+        Instant constructiveStart = Instant.now();
+        final long CONSTRUCTIVE_TIMEOUT_MS = 30000; // 30 seconds
+
         Solution solution = new Solution();
         while (!eval.isSolution(solution) || solution.solutionValue()==0) {
-            addNodeFromCandidateListOptimized(solution);
+            // Check if we've exceeded the timeout
+            if (Duration.between(constructiveStart, Instant.now()).toMillis() > CONSTRUCTIVE_TIMEOUT_MS) {
+                // After timeout, just add random nodes until feasible
+                while (!eval.isSolution(solution) || solution.solutionValue()==0) {
+                    addRandomNode(solution);
+                }
+                break;
+            }
+            addRandomNode(solution);
         }
         System.out.println("ILS: Constructive phase completed with value: " + solution.solutionValue());
         return solution;
@@ -177,7 +188,7 @@ public class IteratedLocalSearch {
         }
         if (nodesInSolution.size()==0)
             return perturbedSol;
-        nodesToRemove%=nodesInSolution.size()+1;
+        nodesToRemove%=nodesInSolution.size()/2+1;
         for (int i = 0; i < nodesToRemove; i++) {
             int randomIndex = random.nextInt(nodesInSolution.size());
             int nodeToRemove = nodesInSolution.get(randomIndex);
@@ -195,11 +206,23 @@ public class IteratedLocalSearch {
             Solution reconstructedSol = new Solution(perturbedSol.getBitwiseRepresentation());
             instance.resetState(reconstructedSol);
 
+            Instant reconstructionStart = Instant.now();
+            final long RECONSTRUCTION_TIMEOUT_MS = 3000; // 30 seconds timeout per reconstruction
+            boolean timeoutReached = false;
+
             while (!eval.isSolution(reconstructedSol)) {
                 if (Duration.between(perturbationStart, Instant.now()).toMillis() > TestRunner.TIME_LIMIT_MS) {
                     return solution;
                 }
-                addNodeFromCandidateListOptimized(reconstructedSol);
+
+                // Check if we've exceeded the reconstruction timeout
+                if (Duration.between(reconstructionStart, Instant.now()).toMillis() > RECONSTRUCTION_TIMEOUT_MS) {
+                    if (!timeoutReached) {
+                        timeoutReached = true;
+                    }
+                }
+                if(timeoutReached) addRandomNode(reconstructedSol);
+                else addNodeFromCandidateListOptimized(reconstructedSol);
             }
 
             // Quedarse con la mejor solución

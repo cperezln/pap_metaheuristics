@@ -49,19 +49,7 @@ public class SpreadingProcessOptimize {
     public boolean isSolution(Solution sol) {
         int n = instance.getNumberNodes();
 
-        // Clear arrays for reuse
-        for (int i = 0; i < n; i++) {
-            spreaderCount[i] = 0;
-            awareCount[i] = 0;
-            visited[i] = false;
-            isSpreaderTaubw[i] = false;
-            isSpreaderTaupbw[i] = false;
-            isAware[i] = false;
-            for (int j = 0; j < n; j++) {
-                checkSpreaders[i][j] = false;
-            }
-        }
-
+        clean_data_structures(n);
         int qSize = 0;
 
         // Auxiliar: para no contar spreaders de más
@@ -127,9 +115,18 @@ public class SpreadingProcessOptimize {
         return awareSize == n;
     }
 
-    public static boolean checkEqualSets(boolean[] s, boolean[] sp) {
-        boolean equals = true;
-        for(int i = 0; i < s.length; i++) equals = equals && (s[i] == sp[i]);
-        return equals;
+    private void clean_data_structures(int n) {
+        // Clear arrays for reuse
+        for (int i = 0; i < n; i++) {
+            spreaderCount[i] = 0;
+            awareCount[i] = 0;
+            visited[i] = false;
+            isSpreaderTaubw[i] = false;
+            isSpreaderTaupbw[i] = false;
+            isAware[i] = false;
+            for (int j = 0; j < n; j++) {
+                checkSpreaders[i][j] = false;
+            }
+        }
     }
 }

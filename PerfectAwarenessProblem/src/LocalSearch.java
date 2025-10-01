@@ -79,15 +79,17 @@ public class LocalSearch {
                             Solution neighbor = new FilterUnnecesaryNodes(finalSol, e).bestSolutionFound;
                             if (neighbor.solutionValue() < this.bestSolutionFound.solutionValue()) {
                                 int improvement = this.bestSolutionFound.solutionValue() - neighbor.solutionValue();
-                                System.out.println("LocalSearch: Improvement found! " + this.bestSolutionFound.solutionValue() + " -> " + neighbor.solutionValue() + " (gain: " + improvement + ") after " + totalNeighborsEvaluated + " evaluations");
+                                //System.out.println("LocalSearch: Improvement found! " + this.bestSolutionFound.solutionValue() + " -> " + neighbor.solutionValue() + " (gain: " + improvement + ") after " + totalNeighborsEvaluated + " evaluations");
                                 this.bestSolutionFound = neighbor;
                                 improved = true;
                             }
                         } else {
                             infeasibleNeighbors++;
                         }
-                        if(Duration.between(startTime, Instant.now()).toMillis() > TestRunner.TIME_LIMIT_MS) {
-                            return;
+                        currentTime = Instant.now().toEpochMilli();
+                        if(currentTime - initTime.toEpochMilli() >= this.timeLimitMs || Duration.between(startTime, Instant.now()).toMillis() > TestRunner.TIME_LIMIT_MS) {
+                            //System.out.println("LocalSearch: Time limit reached after " + (currentTime - initTime.toEpochMilli()) + "ms");
+                            return; // Exit constructor early if time limit reached
                         }
                     }
                 }
