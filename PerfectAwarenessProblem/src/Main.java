@@ -83,14 +83,14 @@ public class Main {
             betcent = 0.4915;
             degcent = 0.9034;
             eigcent = 0.5253;
-            reconstructionIterations = 10;
+            reconstructionIterations = 1;
         }
         if(configIrace == 2) {
             paramAlpha = 0.2412;
             betcent = 0.4915;
             degcent = 0.9034;
             eigcent = 0.5253;
-            reconstructionIterations = 10;
+            reconstructionIterations = 1;
         }
 
         // Determine solution directory - use current working directory with solutions subfolder

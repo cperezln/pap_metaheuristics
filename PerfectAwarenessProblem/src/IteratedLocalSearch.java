@@ -21,6 +21,7 @@ public class IteratedLocalSearch {
     private double eigFactor;
     ArrayList<Integer> RCL = null;
     private int reconstructionIterations; // Number of iterations for reconstruction
+    private int[] nodeFrequency; // Array to track how many times each node appears in solution after local search
 
     public IteratedLocalSearch(double alphaValue, Instance instance, SpreadingProcessOptimize eval, double betFactor, double degFactor, double eigFactor, int reconstructionIterations) {
         this.alphaValue = alphaValue;
@@ -32,6 +33,7 @@ public class IteratedLocalSearch {
         this.degFactor = degFactor;
         this.eigFactor = eigFactor;
         this.reconstructionIterations = reconstructionIterations;
+        this.nodeFrequency = new int[instance.getNumberNodes()]; // Initialize frequency array
 
         // Asignar los factores de centralidad a Solution (campos estáticos)
         Solution.betFactor = betFactor;
@@ -168,6 +170,13 @@ public class IteratedLocalSearch {
             improvedSol.removeUnnedeed();
         }
 
+        // Update node frequency array after local search
+        for (int i = 0; i < instance.getNumberNodes(); i++) {
+            if (improvedSol.isIn(i)) {
+                nodeFrequency[i]++;
+            }
+        }
+
         int finalValue = improvedSol.solutionValue();
         //System.out.println("ILS: Local search: " + initialValue + " -> " + finalValue + " (improvement: " + (initialValue - finalValue) + ")");
         return improvedSol;
@@ -176,7 +185,6 @@ public class IteratedLocalSearch {
     public Solution perturbation(Solution solution,int nodesToRemove) {
         Instant perturbationStart = Instant.now();
 
-        // Eliminar nodos una sola vez
         Solution perturbedSol = new Solution(solution.getBitwiseRepresentation());
 
         // Obtener nodos en la solución de forma más eficiente
@@ -188,14 +196,9 @@ public class IteratedLocalSearch {
         }
         if (nodesInSolution.size()==0)
             return perturbedSol;
-        nodesToRemove%=nodesInSolution.size()/2+1;
-        for (int i = 0; i < nodesToRemove; i++) {
-            int randomIndex = random.nextInt(nodesInSolution.size());
-            int nodeToRemove = nodesInSolution.get(randomIndex);
-            perturbedSol.removeNodeForPerturbation(nodeToRemove);
-            nodesInSolution.set(randomIndex, nodesInSolution.get(nodesInSolution.size() - 1));
-            nodesInSolution.remove(nodesInSolution.size() - 1);
-        }
+
+        //destructRandom(nodesToRemove, nodesInSolution,perturbedSol);
+        destructGreedy(nodesToRemove, nodesInSolution, perturbedSol);
 
         // Ahora reconstruir N veces y quedarse con la mejor
         Solution bestPerturbedSol = null;
@@ -237,6 +240,35 @@ public class IteratedLocalSearch {
 
         //System.out.println("ILS: Perturbation completed - Final value: " + bestPerturbedSol.solutionValue());
         return bestPerturbedSol;
+    }
+
+    private void destructRandom(int nodesToRemove, ArrayList<Integer> nodesInSolution, Solution perturbedSol) {
+        nodesToRemove %=nodesInSolution.size()/2+1;
+        for (int i = 0; i < nodesToRemove; i++) {
+            int randomIndex = random.nextInt(nodesInSolution.size());
+            int nodeToRemove = nodesInSolution.get(randomIndex);
+            perturbedSol.removeNodeForPerturbation(nodeToRemove);
+            nodesInSolution.set(randomIndex, nodesInSolution.get(nodesInSolution.size() - 1));
+            nodesInSolution.remove(nodesInSolution.size() - 1);
+        }
+    }
+
+    /**
+     * Greedy destruction method that removes nodes with highest frequency
+     * (nodes that have appeared most often in solutions after local search)
+     */
+    private void destructGreedy(int nodesToRemove, ArrayList<Integer> nodesInSolution, Solution perturbedSol) {
+        // Ajustar nodesToRemove para no eliminar más de la mitad de los nodos
+        nodesToRemove %= nodesInSolution.size() / 2 + 1;
+
+        // Ordenar los nodos por frecuencia (de mayor a menor)
+        nodesInSolution.sort((a, b) -> Integer.compare(nodeFrequency[b], nodeFrequency[a]));
+
+        // Eliminar los primeros k nodos (los de mayor frecuencia)
+        for (int i = 0; i < nodesToRemove && i < nodesInSolution.size(); i++) {
+            int nodeToRemove = nodesInSolution.get(i);
+            perturbedSol.removeNodeForPerturbation(nodeToRemove);
+        }
     }
 
     public Solution run() {
