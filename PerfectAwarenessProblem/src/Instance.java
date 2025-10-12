@@ -17,7 +17,7 @@ public class Instance {
     HashMap<Integer, ArrayList<Integer>> graph = new HashMap<>();
     private int uniqueNode = 0;
 
-    private ArrayList<int[]> preprocessing(ArrayList<int[]> arr, int numberNodes) {
+    private ArrayList<int[]> oldpreprocessing(ArrayList<int[]> arr, int numberNodes) {
         HashMap<Integer, ArrayList<Integer>> localGraph = new HashMap<>();
         HashMap<Integer, Integer> localDegreeMap = new HashMap<>();
         int lastNodeLabel = 0;
@@ -108,6 +108,107 @@ public class Instance {
         return newEdges;
     }
 
+    static class UnionFind {
+        int[] parent, rank;
+        UnionFind(int n) {
+            parent = new int[n];
+            rank = new int[n];
+            for (int i = 0; i < n; i++) parent[i] = i;
+        }
+        int find(int x) {
+            if (parent[x] != x) parent[x] = find(parent[x]);
+            return parent[x];
+        }
+        void union(int a, int b) {
+            int ra = find(a), rb = find(b);
+            if (ra == rb) return;
+            if (rank[ra] < rank[rb]) parent[ra] = rb;
+            else if (rank[ra] > rank[rb]) parent[rb] = ra;
+            else { parent[rb] = ra; rank[ra]++; }
+        }
+    }
+
+    /**
+     * Performs preprocessing by merging adjacent nodes u,v if
+     * ceil(0.5 * degree(u)) = ceil(0.5 * degree(v)) = 1
+     * (i.e., degree(u) <= 2 and degree(v) <= 2).
+     *
+     * @param edges list of edges (each int[]{u,v}) with arbitrary integer node labels
+     * @return reduced edge list (nodes relabeled 0..k-1)
+     */
+    public static ArrayList<int[]> preprocessing(ArrayList<int[]> edges) {
+        if (edges.isEmpty()) return new ArrayList<>();
+
+        // --- Step A: map arbitrary node labels to compact indices ---
+        HashMap<Integer, Integer> labelToIndex = new HashMap<>();
+        ArrayList<Integer> indexToLabel = new ArrayList<>();
+        for (int[] e : edges) {
+            int u = e[0], v = e[1];
+            if (!labelToIndex.containsKey(u)) {
+                labelToIndex.put(u, indexToLabel.size());
+                indexToLabel.add(u);
+            }
+            if (!labelToIndex.containsKey(v)) {
+                labelToIndex.put(v, indexToLabel.size());
+                indexToLabel.add(v);
+            }
+        }
+
+        int n = indexToLabel.size();
+        int[] degree = new int[n];
+
+        // --- Step B: compute node degrees ---
+        for (int[] e : edges) {
+            int iu = labelToIndex.get(e[0]);
+            int iv = labelToIndex.get(e[1]);
+            if (iu == iv) continue;  // ignore self-loops
+            degree[iu]++;
+            degree[iv]++;
+        }
+
+        // --- Step C: Union nodes u,v if both satisfy ceil(0.5*deg) = 1 ---
+        UnionFind uf = new UnionFind(n);
+        for (int[] e : edges) {
+            int iu = labelToIndex.get(e[0]);
+            int iv = labelToIndex.get(e[1]);
+            if (iu == iv) continue;
+            // Merge if both degrees <= 2
+            if (degree[iu] <= 2 && degree[iv] <= 2) {
+                uf.union(iu, iv);
+            }
+        }
+
+        // --- Step D: Compact representatives ---
+        HashMap<Integer, Integer> repToNew = new HashMap<>();
+        int nextId = 0;
+        for (int i = 0; i < n; i++) {
+            int rep = uf.find(i);
+            if (!repToNew.containsKey(rep)) {
+                repToNew.put(rep, nextId++);
+            }
+        }
+
+        // --- Step E: Build reduced edge list ---
+        HashSet<Long> seen = new HashSet<>();
+        ArrayList<int[]> newEdges = new ArrayList<>();
+
+        for (int[] e : edges) {
+            int iu = labelToIndex.get(e[0]);
+            int iv = labelToIndex.get(e[1]);
+            int a = repToNew.get(uf.find(iu));
+            int b = repToNew.get(uf.find(iv));
+            if (a == b) continue;  // self-loop after merge
+            // deduplicate unordered pairs (a,b)
+            int min = Math.min(a, b), max = Math.max(a, b);
+            long key = (((long)min) << 32) | (max & 0xffffffffL);
+            if (seen.add(key)) {
+                newEdges.add(new int[]{min, max});
+            }
+        }
+
+        return newEdges;
+    }
+
     public Instance(File file, String c) {
         try {
             Scanner reader = new Scanner(file);
@@ -124,7 +225,7 @@ public class Instance {
                 edgeList.add(edge);
             }
             //numberNodes = givenNumberNodes;
-            ArrayList<int[]> newEdges = preprocessing(edgeList, givenNumberNodes);
+            ArrayList<int[]> newEdges = preprocessing(edgeList);
             //numberEdges = newEdges.size();
             for(int[] edge: newEdges) {
                 if(edge[0] != edge[1]) {
