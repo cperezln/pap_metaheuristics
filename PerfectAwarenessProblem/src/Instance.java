@@ -259,7 +259,9 @@ public class Instance {
     }
 
     public ArrayList<Integer> getNodes() {
-        return new ArrayList<Integer>(this.graph.keySet());
+        ArrayList<Integer> nodes = new ArrayList<Integer>(this.graph.keySet());
+        Collections.sort(nodes);  // Ordenar para garantizar determinismo
+        return nodes;
     }
 
     public void setLeafNodes() {
@@ -352,5 +354,9 @@ public class Instance {
 
     public int getUniqueNode() {
         return uniqueNode;
+    }
+
+    public int getNumberEdges() {
+        return numberEdges;
     }
 }

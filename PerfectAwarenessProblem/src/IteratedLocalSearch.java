@@ -22,12 +22,13 @@ public class IteratedLocalSearch {
     ArrayList<Integer> RCL = null;
     private int reconstructionIterations; // Number of iterations for reconstruction
     private int[] nodeFrequency; // Array to track how many times each node appears in solution after local search
+    ArrayList<Integer> nodesNotInSolution = new ArrayList<>(10000);
 
     public IteratedLocalSearch(double alphaValue, Instance instance, SpreadingProcessOptimize eval, double betFactor, double degFactor, double eigFactor, int reconstructionIterations) {
         this.alphaValue = alphaValue;
         this.instance = instance;
         this.eval = eval;
-        this.random = new Random();
+        this.random = new Random(1111);
         this.timeToBestMs = -1;
         this.betFactor = betFactor;
         this.degFactor = degFactor;
@@ -73,63 +74,12 @@ public class IteratedLocalSearch {
     }
 
     /**
-     * Optimized method to add nodes from RCL using shuffled indices
-     * Avoids cycles by iterating through shuffled indices instead of random selection
-     */
-    private void addNodeFromCandidateListOptimized(Solution solution) {
-        recalculateRCL(solution);
-        if (RCL.isEmpty()) return;
-
-        // Crear lista de índices
-        ArrayList<Integer> indices = new ArrayList<>();
-        for (int i = 0; i < RCL.size(); i++) {
-            indices.add(i);
-        }
-
-        // Hacer shuffle de los índices
-        Collections.shuffle(indices, random);
-
-        // Intentar añadir nodos hasta que sea factible
-        for (Integer index : indices) {
-            int nodeToAdd = RCL.get(index);
-            if (!solution.isIn(nodeToAdd)) {
-                try {
-                    solution.addNode(nodeToAdd);
-                    instance.resetState(solution);
-
-                    // Si ya es factible, salir
-                    if (eval.isSolution(solution)) {
-                        return;
-                    }
-                } catch (Exception e) {
-                    System.out.println("Error adding node: " + e.getMessage());
-                }
-            }
-        }
-    }
-
-    /**
      * Add a random node to the solution instead of using candidate list
      * This provides more diversification during perturbation
      */
     private void addRandomNode(Solution solution) {
-        // Get nodes not currently in the solution
-        ArrayList<Integer> nodesNotInSolution = new ArrayList<>();
-        for (int i = 0; i < instance.getNumberNodes(); i++) {
-            if (!solution.isIn(i)) {
-                nodesNotInSolution.add(i);
-            }
-        }
-
-        if (nodesNotInSolution.isEmpty()) {
-            System.out.println("ILS: Warning - No nodes available to add!");
-            return;
-        }
-
         // Select a completely random node
-        int randomIndex = random.nextInt(nodesNotInSolution.size());
-        int nodeToAdd = nodesNotInSolution.get(randomIndex);
-
+        int nodeToAdd = nodesNotInSolution.removeLast();
         try {
             solution.addNode(nodeToAdd);
             instance.resetState(solution);
@@ -140,32 +90,35 @@ public class IteratedLocalSearch {
 
     public Solution constructivePhase() {
         Instant constructiveStart = Instant.now();
-        final long CONSTRUCTIVE_TIMEOUT_MS = 30000; // 30 seconds
+        final long CONSTRUCTIVE_TIMEOUT_MS = 3000; // 30 seconds
 
         Solution solution = new Solution();
+        // Get nodes not currently in the solution
+        prepareNodesnotInSolutionforAddRandomNode(solution);
         while (!eval.isSolution(solution) || solution.solutionValue()==0) {
             // Check if we've exceeded the timeout
-            if (Duration.between(constructiveStart, Instant.now()).toMillis() > CONSTRUCTIVE_TIMEOUT_MS) {
+            /*if (Duration.between(constructiveStart, Instant.now()).toMillis() > CONSTRUCTIVE_TIMEOUT_MS) {
                 // After timeout, just add random nodes until feasible
+                prepareNodesnotInSolutionforAddRandomNode(solution);
                 while (!eval.isSolution(solution) || solution.solutionValue()==0) {
                     addRandomNode(solution);
                 }
                 break;
-            }
+            }*/
             addRandomNode(solution);
         }
-        System.out.println("ILS: Constructive phase completed with value: " + solution.solutionValue());
+        //System.out.println("ILS: Constructive phase completed with value: " + solution.solutionValue());
         return solution;
     }
 
-    public Solution localSearch(Solution solution, Instant startTime) {
+    public Solution localSearch(Solution solution, Instant startTime, int ilsIteration) {
         solution.removeUnnedeed();
         Solution improvedSol = solution;
         int initialValue = improvedSol.solutionValue();
 
         if (improvedSol.solutionValue() >= 2) {
-            Solution filteredSol = new FilterUnnecesaryNodes(improvedSol, eval).bestSolutionFound;
-            LocalSearch ls = new LocalSearch(filteredSol, eval, TestRunner.LOCAL_SEARCH_TIME_LIMIT_MS,startTime);
+            //Solution filteredSol = new FilterUnnecesaryNodes(improvedSol, eval).bestSolutionFound;
+            LocalSearch ls = new LocalSearch(improvedSol, eval, startTime, ilsIteration, random);
             improvedSol = ls.bestSolutionFound;
             improvedSol.removeUnnedeed();
         }
@@ -197,53 +150,48 @@ public class IteratedLocalSearch {
         if (nodesInSolution.size()==0)
             return perturbedSol;
 
-        //destructRandom(nodesToRemove, nodesInSolution,perturbedSol);
-        destructGreedy(nodesToRemove, nodesInSolution, perturbedSol);
+        destructRandom(nodesToRemove, nodesInSolution,perturbedSol);
+        //destructGreedy(nodesToRemove, nodesInSolution, perturbedSol);
+        instance.resetState(perturbedSol);
 
-        // Ahora reconstruir N veces y quedarse con la mejor
-        Solution bestPerturbedSol = null;
-        int bestValue = Integer.MAX_VALUE;
-
-        for (int iter = 0; iter < reconstructionIterations; iter++) {
-            // Crear una copia de la solución perturbada para cada iteración de reconstrucción
-            Solution reconstructedSol = new Solution(perturbedSol.getBitwiseRepresentation());
-            instance.resetState(reconstructedSol);
-
-            Instant reconstructionStart = Instant.now();
-            final long RECONSTRUCTION_TIMEOUT_MS = 3000; // 30 seconds timeout per reconstruction
-            boolean timeoutReached = false;
-
-            while (!eval.isSolution(reconstructedSol)) {
-                if (Duration.between(perturbationStart, Instant.now()).toMillis() > TestRunner.TIME_LIMIT_MS) {
-                    return solution;
-                }
-
-                // Check if we've exceeded the reconstruction timeout
-                if (Duration.between(reconstructionStart, Instant.now()).toMillis() > RECONSTRUCTION_TIMEOUT_MS) {
-                    if (!timeoutReached) {
-                        timeoutReached = true;
-                    }
-                }
-                if(timeoutReached) addRandomNode(reconstructedSol);
-                else addNodeFromCandidateListOptimized(reconstructedSol);
+        Instant reconstructionStart = Instant.now();
+        final long RECONSTRUCTION_TIMEOUT_MS = 3000; // 3 seconds timeout per reconstruction
+        boolean timeoutReached = false;
+        //Get nodes not currently in the solution
+        prepareNodesnotInSolutionforAddRandomNode(perturbedSol);
+        while (!eval.isSolution(perturbedSol)) {
+            if (Duration.between(perturbationStart, Instant.now()).toMillis() > TestRunner.TIME_LIMIT_MS) {
+                return solution;
             }
+            if (Duration.between(reconstructionStart, Instant.now()).toMillis() > RECONSTRUCTION_TIMEOUT_MS) {
+                if (!timeoutReached) {
+                    timeoutReached = true;
+                    prepareNodesnotInSolutionforAddRandomNode(perturbedSol);
+                }
+            }
+            if(timeoutReached) addRandomNode(perturbedSol);
+            else addRandomNode(perturbedSol);
+        }
+        return perturbedSol;
+    }
 
-            // Quedarse con la mejor solución
-            if (reconstructedSol.solutionValue() < bestValue) {
-                int previousBest = bestValue;
-                bestValue = reconstructedSol.solutionValue();
-                bestPerturbedSol = reconstructedSol;
-                if(bestValue==1) break;
-                //System.out.println("ILS: Reconstruction iteration " + iter + " improved: " + previousBest + " -> " + bestValue);
+    private void prepareNodesnotInSolutionforAddRandomNode(Solution solution) {
+        nodesNotInSolution.clear();
+        // Use getNodes() to ensure we iterate over actual nodes in deterministic order
+        for (int i : instance.getNodes()) {
+            if (!solution.isIn(i)) {
+                nodesNotInSolution.add(i);
             }
         }
 
-        //System.out.println("ILS: Perturbation completed - Final value: " + bestPerturbedSol.solutionValue());
-        return bestPerturbedSol;
+        if (nodesNotInSolution.isEmpty()) {
+            System.out.println("ILS: Warning - No nodes available to add!");
+        }
+        Collections.shuffle(nodesNotInSolution, random);
     }
 
     private void destructRandom(int nodesToRemove, ArrayList<Integer> nodesInSolution, Solution perturbedSol) {
-        nodesToRemove %=nodesInSolution.size()/2+1;
+        nodesToRemove %=nodesInSolution.size()+1;
         for (int i = 0; i < nodesToRemove; i++) {
             int randomIndex = random.nextInt(nodesInSolution.size());
             int nodeToRemove = nodesInSolution.get(randomIndex);
@@ -259,7 +207,7 @@ public class IteratedLocalSearch {
      */
     private void destructGreedy(int nodesToRemove, ArrayList<Integer> nodesInSolution, Solution perturbedSol) {
         // Ajustar nodesToRemove para no eliminar más de la mitad de los nodos
-        nodesToRemove %= nodesInSolution.size() / 2 + 1;
+        nodesToRemove %= nodesInSolution.size()  + 1;
 
         // Ordenar los nodos por frecuencia (de mayor a menor)
         nodesInSolution.sort((a, b) -> Integer.compare(nodeFrequency[b], nodeFrequency[a]));
@@ -268,6 +216,34 @@ public class IteratedLocalSearch {
         for (int i = 0; i < nodesToRemove && i < nodesInSolution.size(); i++) {
             int nodeToRemove = nodesInSolution.get(i);
             perturbedSol.removeNodeForPerturbation(nodeToRemove);
+            nodeFrequency[nodeToRemove]-=2;
+        }
+    }
+
+    /**
+     * Write solution to file in specified directory
+     */
+    private void writeSolutionToFile(Solution solution, String instanceName, String directoryName, Instant startTime) {
+        try {
+            // Remove extension from instance name if present
+            String instanceBaseName = instanceName.replaceFirst("\\.[^.]+$", "");
+            String outputFileName = instanceBaseName + ".txt";
+            String outputPath = directoryName + "/" + outputFileName;
+
+            PrintWriter writer = new PrintWriter(outputPath, "UTF-8");
+
+            long executionTime = Duration.between(startTime, Instant.now()).toMillis();
+
+            writer.println(instanceBaseName);
+            writer.println(solution.solutionValue());
+            writer.println(solution);
+            writer.println(executionTime);
+
+            writer.close();
+
+            System.out.println("Saved solution to " + outputPath + " with value: " + solution.solutionValue());
+        } catch (IOException e) {
+            System.err.println("Error writing solution to file: " + e.getMessage());
         }
     }
 
@@ -281,6 +257,17 @@ public class IteratedLocalSearch {
         if (!timeToBestDir.exists()) {
             timeToBestDir.mkdirs();
         }
+
+        // Create directories for constructive and local search solutions
+        java.io.File constructiveDir = new java.io.File("Constructivo");
+        if (!constructiveDir.exists()) {
+            constructiveDir.mkdirs();
+        }
+        java.io.File localSearchDir = new java.io.File("LocalSearch");
+        if (!localSearchDir.exists()) {
+            localSearchDir.mkdirs();
+        }
+
         String timeToBestFileName = "time_to_best/time_to_best_" + instanceName + ".txt";
         String methodContributionName = "time_to_best/contribution_" + instanceName + ".txt";
         try {
@@ -312,12 +299,55 @@ public class IteratedLocalSearch {
             }
         }
         else {
-            Solution currentSolution = constructivePhase();
-            int constructiveOF = currentSolution.solutionValue();
-            currentSolution = localSearch(currentSolution,startTime);
-            int lsOF = currentSolution.solutionValue();
+            // Execute N iterations of constructive + local search before ILS
+            Solution currentSolution = null;
+            int constructiveOF = Integer.MAX_VALUE;
+            int lsOF = Integer.MAX_VALUE;
+            int bestValue = Integer.MAX_VALUE;
+
+            for (int initIter = 0; initIter < 1; initIter++) {
+                // Reset RCL for each construction
+                RCL = null;
+
+                // Constructive phase
+                Solution tempSolution = constructivePhase();
+                int tempConstructiveOF = tempSolution.solutionValue();
+
+                // Write constructive solution to file
+                writeSolutionToFile(tempSolution, instanceName, "Constructivo", startTime);
+
+                // Local search phase
+                tempSolution = localSearch(tempSolution, startTime, initIter);
+                int tempLsOF = tempSolution.solutionValue();
+
+                // Write local search solution to file
+                writeSolutionToFile(tempSolution, instanceName, "LocalSearch", startTime);
+
+                System.out.println(String.format("ILS: Init iteration %d - Constructive: %d, After LS: %d",
+                        initIter + 1, tempConstructiveOF, tempLsOF));
+
+                // Keep the best solution found (or first solution if it's the first iteration)
+                if (currentSolution == null || tempLsOF < bestValue) {
+                    currentSolution = tempSolution;
+                    constructiveOF = tempConstructiveOF;
+                    lsOF = tempLsOF;
+                    bestValue = tempLsOF;
+                    System.out.println(String.format("ILS: New best in initial phase: %d", bestValue));
+                }
+
+                // Check time limit
+                if (Duration.between(startTime, Instant.now()).toMillis() >= TestRunner.TIME_LIMIT_MS) {
+                    break;
+                }
+            }
+
+            // Ensure we have a valid solution
+            if (currentSolution == null) {
+                System.err.println("ERROR: No solution generated in initial phase!");
+                return null;
+            }
+
             bestSolution = new Solution(currentSolution.getBitwiseRepresentation());
-            int bestValue = bestSolution.solutionValue();
 
             // Record initial solution as first improvement
             long initialTimeToBest = Duration.between(startTime, Instant.now()).toMillis();
@@ -330,19 +360,18 @@ public class IteratedLocalSearch {
 
             int iteration = 0;
             int iterationsWithoutImprovement = 0;
-            final int MAX_ITERATIONS_WITHOUT_IMPROVEMENT = 50000;
+            final int MAX_ITERATIONS_WITHOUT_IMPROVEMENT = 20;
 
             while (Duration.between(startTime, Instant.now()).toMillis() < TestRunner.TIME_LIMIT_MS) {
                 iteration++;
                 if(bestValue==1) break;
                 Solution perturbedSolution = perturbation(currentSolution,iteration);
-                Solution localOptimum = localSearch(perturbedSolution,startTime);
+                Solution localOptimum = localSearch(perturbedSolution, startTime, iteration-1);
 
                 // Criterio de aceptación: aceptar si es mejor o igual
                 if (localOptimum.solutionValue() <= currentSolution.solutionValue()) {
                     currentSolution = localOptimum;
                     iterationsWithoutImprovement = 0;
-
                     // Actualizar mejor solución si es necesario
                     if (localOptimum.solutionValue() < bestValue) {
                         bestSolution = new Solution(localOptimum.getBitwiseRepresentation());
@@ -368,9 +397,25 @@ public class IteratedLocalSearch {
                 if (iterationsWithoutImprovement >= MAX_ITERATIONS_WITHOUT_IMPROVEMENT) {
                     //System.out.println(String.format("ILS: Restart at iteration %d - reconstructing solution...", iteration));
                     currentSolution = constructivePhase();
-                    currentSolution = localSearch(currentSolution,startTime);
+                    currentSolution = localSearch(currentSolution, startTime, iteration);
                     iterationsWithoutImprovement = 0;
                     //System.out.println(String.format("ILS: After restart, current solution value: %d", currentSolution.solutionValue()));
+                    if (currentSolution.solutionValue() < bestValue) {
+                        bestSolution = new Solution(currentSolution.getBitwiseRepresentation());
+                        bestValue = bestSolution.solutionValue();
+
+                        // Record time to best for this improvement
+                        long currentTimeToBest = Duration.between(startTime, Instant.now()).toMillis();
+                        timeToBestMs = currentTimeToBest;
+
+                        timeToBestWriter.println(currentTimeToBest + "\t" + bestValue + "\t" + iteration);
+                        timeToBestWriter.flush();
+
+
+                        System.out.println("ILS: New best solution found at iteration " + iteration + " with value: " + bestValue);
+                        System.out.println("ILS: Time to best: " + currentTimeToBest + " ms");
+                        if(bestValue==1) break;
+                    }
                 }
             }
             long totalTime = Duration.between(startTime, Instant.now()).toMillis();

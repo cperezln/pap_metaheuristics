@@ -144,7 +144,7 @@ public class Main {
     private static void processAllInstances(String inPath, String algorithm, int configIrace)
             throws FileNotFoundException, UnsupportedEncodingException {
 
-        String pathInstances = inPath + "/previous_work/special_instances";
+        String pathInstances = inPath + "/previous_work/instances";
         String pathSolutions = inPath + "/previous_work/solutions";
         File dirInstances = new File(pathInstances);
 

@@ -3,110 +3,139 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedList;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 public class LocalSearch {
     Solution bestSolutionFound;
-    private long timeLimitMs;
+    private Random random;
 
-    public LocalSearch(Solution solution, SpreadingProcessOptimize e, long timeLimitMs, Instant startTime) {
-        this.timeLimitMs = timeLimitMs;
-        // Definimos la búsqueda local con el esquema habitual
+    public LocalSearch(Solution solution, SpreadingProcessOptimize e,  Instant startTime, int ilsIteration, Random random) {
+
         this.bestSolutionFound = solution;
+        this.random = random;
         boolean improved = true;
         Instant initTime = Instant.now();
-        int iterations = 0;
-        int totalNeighborsEvaluated = 0;
-        int feasibleNeighbors = 0;
-        int infeasibleNeighbors = 0;
-        int initialValue = solution.solutionValue();
 
-        //System.out.println("LocalSearch: Starting with solution value: " + initialValue);
-
+        ArrayList<Integer> nodesInSolution = new ArrayList<>();
+        int n = Solution.instance.getNumberNodes();
+        int m = Solution.instance.getNumberEdges();
+        double density = (2.0 * m) / (n * (n - 1));
+        boolean isDense = density > 0.15;
         while (improved) {
-            iterations++;
-            // Implementamos el movimiento de la solución. En este caso, es un swap de dos nodos de la solución por un nodo que no esté en la misma.
-            this.bestSolutionFound = new FilterUnnecesaryNodes(this.bestSolutionFound, e).bestSolutionFound;
             solution = this.bestSolutionFound;
             improved = false;
             LinkedList<Integer> nodesNotInSolution = this.bestSolutionFound.nodesNotInSolution();
-            //System.out.println("LocalSearch: Iteration " + iterations + " - Current value: " + this.bestSolutionFound.solutionValue() + ", Nodes to try: " + nodesNotInSolution.size());
-
             if (nodesNotInSolution.isEmpty()) {
-                //System.out.println("LocalSearch: No nodes outside solution, stopping.");
                 break;
             }
+            ArrayList<Integer> candidatesOut = new ArrayList<>(nodesNotInSolution);
 
-            for (Integer node : nodesNotInSolution) {
+            int steps = 80;
+            if (!isDense && nodesNotInSolution.size() > steps) {
+                // Paso 1: Top-K rápido (tomar top 3*steps)
+                candidatesOut.sort((a, b) -> {
+                    int degA = Solution.instance.graph.get(a).size();
+                    int degB = Solution.instance.graph.get(b).size();
+                    return Integer.compare(degB, degA);
+                });
+                if(n<=900) {
+                    // Paso 2: Weighted sampling sobre top-K (Efraimidis & Spirakis)
+                    int topK = Math.min(3 * steps, candidatesOut.size());
+                    List<Integer> top = new ArrayList<>(candidatesOut.subList(0, topK));
+
+                    // Clase auxiliar simple para guardar nodo y clave
+                    class WeightedKey {
+                        int node;
+                        double key;
+
+                        WeightedKey(int node, double key) {
+                            this.node = node;
+                            this.key = key;
+                        }
+                    }
+
+                    // Generar clave aleatoria para cada nodo según su peso
+                    List<WeightedKey> keys = new ArrayList<>(top.size());
+                    for (int node : top) {
+                        int degree = Solution.instance.graph.get(node).size();
+                        double weight = Math.pow(degree, 4);  // puedes ajustar el exponente
+                        double u = random.nextDouble();
+                        double key = Math.pow(u, 1.0 / weight); // clave ponderada
+                        keys.add(new WeightedKey(node, key));
+                    }
+
+                    // Ordenar por clave descendente (mayor key = más probabilidad)
+                    keys.sort((a, b) -> Double.compare(b.key, a.key));
+
+                    // Tomar los steps mejores
+                    ArrayList<Integer> sampled = new ArrayList<>(steps);
+                    for (int i = 0; i < Math.min(steps, keys.size()); i++) {
+                        sampled.add(keys.get(i).node);
+                    }
+
+                    // Resultado final
+                    candidatesOut = sampled;
+                }else{
+                    candidatesOut = new ArrayList<>(candidatesOut.subList(0, Math.min(steps, candidatesOut.size())));
+                }
+
+            } else {
+                java.util.Collections.shuffle(candidatesOut, random);
+            }
+
+            nodesInSolution.clear();
+            BigInteger solutionBits = solution.getBitwiseRepresentation();
+            for (int i = 0; i < Solution.instance.getNumberNodes(); i++) {
+                if (solutionBits.testBit(i)) {
+                    nodesInSolution.add(i);
+                }
+            }
+
+            java.util.Collections.shuffle(nodesInSolution, random);
+
+            for (Integer node : candidatesOut) {
+
                 if(improved) break;
                 long currentTime = Instant.now().toEpochMilli();
-                if(currentTime - initTime.toEpochMilli() >= this.timeLimitMs || Duration.between(startTime, Instant.now()).toMillis() > TestRunner.TIME_LIMIT_MS) {
-                    //System.out.println("LocalSearch: Time limit reached after " + (currentTime - initTime.toEpochMilli()) + "ms");
-                    return; // Exit constructor early if time limit reached
+                if(currentTime - initTime.toEpochMilli() >= TestRunner.LOCAL_SEARCH_TIME_LIMIT_MS || Duration.between(startTime, Instant.now()).toMillis() > TestRunner.TIME_LIMIT_MS) {
+                    return;
                 }
-                // El intercambio consiste en coger uno de los nodos que no está en la solución, e intentar intercambiarlo por un par de los nodos
-                // que sí que están.
-                int iter = 0;
-
-                // Create efficient list of nodes in solution to avoid BigInteger operations
-                ArrayList<Integer> nodesInSolution = new ArrayList<>();
-                BigInteger solutionBits = solution.getBitwiseRepresentation();
-                for (int i = 0; i < Solution.instance.getNumberNodes(); i++) {
-                    if (solutionBits.testBit(i)) {
-                        nodesInSolution.add(i);
-                    }
-                }
-                // Shuffle for more diversity in local search
-                java.util.Collections.shuffle(nodesInSolution);
 
                 // Efficient nested loop over nodes in solution
                 for (int i = 0; i < nodesInSolution.size() && !improved; i++) {
                     int indexI = nodesInSolution.get(i);
                     for (int j = i + 1; j < nodesInSolution.size() && !improved; j++) {
                         int indexJ = nodesInSolution.get(j);
-                        iter++;
 
                         // Perform swap: remove indexI and indexJ, add node
                         BigInteger bwSol = solutionBits
-                            .clearBit(indexI)
-                            .clearBit(indexJ)
-                            .setBit(node);
+                                .clearBit(indexI)
+                                .clearBit(indexJ)
+                                .setBit(node);
 
                         Solution finalSol = new Solution(bwSol);
                         Solution.instance.resetState(finalSol);
-                        totalNeighborsEvaluated++;
                         if(e.isSolution(finalSol)) {
-                            feasibleNeighbors++;
-                            Solution neighbor = new FilterUnnecesaryNodes(finalSol, e).bestSolutionFound;
-                            if (neighbor.solutionValue() < this.bestSolutionFound.solutionValue()) {
-                                int improvement = this.bestSolutionFound.solutionValue() - neighbor.solutionValue();
-                                //System.out.println("LocalSearch: Improvement found! " + this.bestSolutionFound.solutionValue() + " -> " + neighbor.solutionValue() + " (gain: " + improvement + ") after " + totalNeighborsEvaluated + " evaluations");
-                                this.bestSolutionFound = neighbor;
+                            //finalSol = new FilterUnnecesaryNodes(finalSol, e).bestSolutionFound;
+                            if (finalSol.solutionValue() < this.bestSolutionFound.solutionValue()) {
                                 improved = true;
+                                //finalSol = new FilterUnnecesaryNodes(finalSol, e).bestSolutionFound;
+                                int improvement = this.bestSolutionFound.solutionValue() - finalSol.solutionValue();
+                                //System.out.println("LocalSearch: Improvement found! " + this.bestSolutionFound.solutionValue() + " -> " + finalSol.solutionValue() + " (gain: " + improvement + ")");
+                                this.bestSolutionFound = finalSol;
+                                nodesInSolution.remove((Integer)indexI);
+                                nodesInSolution.remove((Integer)indexJ);
+                                nodesInSolution.add(node);
                             }
-                        } else {
-                            infeasibleNeighbors++;
                         }
                         currentTime = Instant.now().toEpochMilli();
-                        if(currentTime - initTime.toEpochMilli() >= this.timeLimitMs || Duration.between(startTime, Instant.now()).toMillis() > TestRunner.TIME_LIMIT_MS) {
-                            //System.out.println("LocalSearch: Time limit reached after " + (currentTime - initTime.toEpochMilli()) + "ms");
-                            return; // Exit constructor early if time limit reached
+                        if(currentTime - initTime.toEpochMilli() >= TestRunner.LOCAL_SEARCH_TIME_LIMIT_MS || Duration.between(startTime, Instant.now()).toMillis() > TestRunner.TIME_LIMIT_MS) {
+                            return;
                         }
                     }
                 }
             }
         }
-
-        int finalValue = this.bestSolutionFound.solutionValue();
-        long totalTime = Instant.now().toEpochMilli() - initTime.toEpochMilli();
-        //System.out.println("LocalSearch: Completed in " + iterations + " iterations, " + totalNeighborsEvaluated + " neighbor evaluations, " + totalTime + "ms");
-        //System.out.println("LocalSearch: Feasible: " + feasibleNeighbors + ", Infeasible: " + infeasibleNeighbors + " (" + String.format("%.1f", (100.0 * feasibleNeighbors / Math.max(1, totalNeighborsEvaluated))) + "% feasible)");
-        //System.out.println("LocalSearch: Final improvement: " + initialValue + " -> " + finalValue + " (total gain: " + (initialValue - finalValue) + ")");
-
-        /*if (totalNeighborsEvaluated == 0) {
-            System.out.println("LocalSearch: WARNING - No neighbors were evaluated! Check if solution is already minimal or movement generation is broken.");
-        }
-        if (feasibleNeighbors == 0 && totalNeighborsEvaluated > 0) {
-            System.out.println("LocalSearch: WARNING - No feasible neighbors found! All generated moves are infeasible.");
-        }*/
     }
 }

@@ -18,11 +18,6 @@ public class SpreadingProcessOptimize {
     private boolean[] isAware;
     private int[] qSpreaders;
 
-    public SpreadingProcessOptimize(Instance i) {
-        this.instance = i;
-        this.startTime = null;
-        initializeArrays(10000);
-    }
 
     public SpreadingProcessOptimize(Instance i, Instant startTime) {
         this.instance = i;
@@ -44,7 +39,6 @@ public class SpreadingProcessOptimize {
     public void setStartTime(Instant startTime) {
         this.startTime = startTime;
     }
-
 
     public boolean isSolution(Solution sol) {
         int n = instance.getNumberNodes();
@@ -77,7 +71,6 @@ public class SpreadingProcessOptimize {
         awareCount = spreaderCount;
         /*---------------------------------------------------*/
         int qHead = 0;
-
         while(qHead < qSize && awareSize != n) {
             int node = qSpreaders[qHead++];
             if(!visited[node]) {
@@ -88,6 +81,7 @@ public class SpreadingProcessOptimize {
                         isAware[neigh] = true;
                         awareSize++;
                         this.instance.setState(neigh, 1);
+                        if (awareSize==n) break;
                     }
                     if(!checkSpreaders[node][neigh]) {
                         checkSpreaders[node][neigh] = true;
@@ -107,11 +101,13 @@ public class SpreadingProcessOptimize {
                 }
             }
         }
+
         sol.setAware(awareSize);
         // Create a copy of awareCount for this solution
         int[] awareCountCopy = new int[n];
         System.arraycopy(awareCount, 0, awareCountCopy, 0, n);
         sol.setAwareCount(awareCountCopy);
+
         return awareSize == n;
     }
 

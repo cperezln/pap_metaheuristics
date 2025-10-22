@@ -1,6 +1,7 @@
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Random;
 
 public class GRASP {
     private LocalSearch ls;
@@ -9,6 +10,7 @@ public class GRASP {
     private Instance instance;
     private SpreadingProcessOptimize eval;
     private long timeToBestMs = -1; // Time when best solution was found
+    private Random random;
     // Centrality factors for thread-safe solution creation
     private double betFactor;
     private double degFactor;
@@ -20,6 +22,7 @@ public class GRASP {
         this.instance = instance;
         this.eval = eval;
         this.timeToBestMs = -1;
+        this.random = new Random(123); // Semilla fija para reproducibilidad
         this.betFactor = betFactor;
         this.degFactor = degFactor;
         this.eigFactor = eigFactor;
@@ -36,11 +39,11 @@ public class GRASP {
         while (!eval.isSolution(graspSol)) {
             ArrayList<PairVal> candidateList = graspSol.candidateList();
             ArrayList<Integer> restCandidateList = new ArrayList<>();
-            double rclThresh = (double) (graspSol.minVal + alphaValue * (graspSol.maxVal - graspSol.minVal));
+            double rclThresh = graspSol.minVal + alphaValue * (graspSol.maxVal - graspSol.minVal);
             for (PairVal pv : candidateList) {
                 if (pv.val >= rclThresh) restCandidateList.add(pv.node);
             }
-            int selectRand = (int) (Math.random() * restCandidateList.size());
+            int selectRand = random.nextInt(restCandidateList.size());
             try {
                 graspSol.addNode(restCandidateList.get(selectRand));
             }
@@ -55,13 +58,13 @@ public class GRASP {
         return graspSol;
     }
 
-    public Solution improvePhase(Solution sol, Instant startTime) {
+    public Solution improvePhase(Solution sol, Instant startTime, int iteration) {
         sol.removeUnnedeed();
         Solution improvedSol = sol;
         double execTime = 0;
         if (improvedSol.solutionValue() >= 2) {
             Solution graspSolImproved = new FilterUnnecesaryNodes(improvedSol, eval).bestSolutionFound;
-            LocalSearch ls = new LocalSearch(graspSolImproved, eval, TestRunner.LOCAL_SEARCH_TIME_LIMIT_MS,startTime);
+            LocalSearch ls = new LocalSearch(graspSolImproved, eval, startTime, iteration, random);
             improvedSol = ls.bestSolutionFound;
             improvedSol.removeUnnedeed();
         }
@@ -82,7 +85,7 @@ public class GRASP {
             // Fase de mejora
             Solution improvedSol = graspSol;
             double execTime = 0;
-            improvedSol = improvePhase(improvedSol,start);
+            improvedSol = improvePhase(improvedSol, start, j);
             if (Duration.between(start, Instant.now()).toMillis() >= TestRunner.TIME_LIMIT_MS) {
                 timeLimit = true;
             }

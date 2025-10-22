@@ -11,10 +11,10 @@ N_PARALLEL=${1:-4}
 ALGORITHM=${2:-ILS}
 
 # Directorio de instancias (solo los archivos específicos)
-INSTANCES_DIR="/Users/isaaclozano/Documents/GitHub/pap_metaheuristics/previous_work/instances" #/home/isaac/pap/previous_work/instances /Users/isaaclozano/Documents/GitHub/pap_metaheuristics/previous_work/instances
+INSTANCES_DIR="./previous_work/instances"
 
 # Archivo JAR
-JAR_FILE="./out/artifacts/PerfectAwarenessProblem_jar/PerfectAwarenessProblem.jar" #/home/isaac/pap  "./out/artifacts/PerfectAwarenessProblem_jar/PerfectAwarenessProblem.jar"
+JAR_FILE="./PerfectAwarenessProblem.jar" #/home/isaac/pap  "./out/artifacts/PerfectAwarenessProblem_jar/PerfectAwarenessProblem.jar"
 
 # Verificar que existe el directorio de instancias
 if [ ! -d "$INSTANCES_DIR" ]; then
