@@ -1,4 +1,3 @@
-import java.math.BigInteger;
 import java.util.*;
 
 public class Solution {
@@ -10,7 +9,7 @@ public class Solution {
     public static double eigFactor;
     public static Instance instance;
     // Structure - related parameters
-    private BigInteger solutionBw;
+    private BitSet solutionBw;
     // Metrics parameters
     private int solutionValue = Integer.MAX_VALUE;
     // Diffusion parameters
@@ -22,14 +21,16 @@ public class Solution {
     public double maxVal = Double.MIN_VALUE;
 
 
-    public Solution(BigInteger solution) {
-        this.solutionBw = solution;
-        this.solutionValue = solution.bitCount();
+    public Solution(BitSet solution) {
+        // Clone so this Solution owns independent, mutable state - callers
+        // must not be able to affect us by mutating the BitSet they passed in.
+        this.solutionBw = (BitSet) solution.clone();
+        this.solutionValue = this.solutionBw.cardinality();
         this.numberAware = this.solutionValue;
     }
 
     public Solution() {
-        this.solutionBw = BigInteger.ZERO;
+        this.solutionBw = new BitSet();
         this.solutionValue = 0;
         this.numberAware = 0;
     }
@@ -37,14 +38,8 @@ public class Solution {
     @Override
     public String toString() {
         String s = "(";
-        BigInteger nextPossible = this.solutionBw;
-        int index = nextPossible.getLowestSetBit();
-        if (index != -1) {
-            do {
-                s += index + ", ";
-                nextPossible = nextPossible.xor(BigInteger.ONE.shiftLeft(index));
-                index = nextPossible.getLowestSetBit();
-            } while (index != -1);
+        for (int index = solutionBw.nextSetBit(0); index >= 0; index = solutionBw.nextSetBit(index + 1)) {
+            s += index + ", ";
         }
         s += ")";
         return s;
@@ -61,8 +56,8 @@ public class Solution {
 
     public void addNode(int node) {
         if(!this.isIn(node)) {
-            this.solutionBw = this.solutionBw.add(BigInteger.ONE.shiftLeft(node));
-            this.solutionValue = this.solutionBw.bitCount();
+            this.solutionBw.set(node);
+            this.solutionValue = this.solutionBw.cardinality();
             this.numberAware = this.solutionValue;
             instance.setState(node, 2);
             for (int neigh : instance.graph.get(node)) {
@@ -72,31 +67,27 @@ public class Solution {
     }
 
     public void addNodeUnique(int node) {
-        this.solutionBw = this.solutionBw.add(BigInteger.ONE.shiftLeft(node));
-        this.solutionValue = this.solutionBw.bitCount();
+        this.solutionBw.set(node);
+        this.solutionValue = this.solutionBw.cardinality();
         this.numberAware = this.solutionValue;
     }
 
     public void removeNode(int node) {
-        this.solutionBw.clearBit(node);
-        this.solutionValue = this.solutionBw.bitCount();
+        this.solutionBw.clear(node);
+        this.solutionValue = this.solutionBw.cardinality();
         this.numberAware = this.solutionValue;
         instance.setState(node, 0);
     }
 
-    /**
-     * Method specifically for perturbation that actually removes the node
-     * BigInteger is immutable, so we need to reassign the result
-     */
     public void removeNodeForPerturbation(int node) {
-        this.solutionBw = this.solutionBw.clearBit(node); // BigInteger is immutable!
-        this.solutionValue = this.solutionBw.bitCount();
+        this.solutionBw.clear(node);
+        this.solutionValue = this.solutionBw.cardinality();
         this.numberAware = this.solutionValue;
         instance.setState(node, 0);
     }
 
     public boolean isIn(int node) {
-        return this.solutionBw.testBit(node);
+        return this.solutionBw.get(node);
     }
 
     public LinkedList<Integer> nodesNotInSolution() {
@@ -128,21 +119,17 @@ public class Solution {
         return al;
     }
 
-    public BigInteger getBitwiseRepresentation() {
+    public BitSet getBitwiseRepresentation() {
         return this.solutionBw;
     }
 
     public void removeUnnedeed() {
-        BigInteger nextPossible = this.solutionBw;
-        int index = nextPossible.getLowestSetBit();
-        if (index != -1) {
-            do {
-                if(this.getSpreaderNeighs(index) >= instance.graph.get(index).size() * 0.5 && this.isIn(index)) {
-                    this.removeNode(index);
-                }
-                nextPossible = nextPossible.xor(BigInteger.ONE.shiftLeft(index));
-                index = nextPossible.getLowestSetBit();
-            } while (index != -1);
+        // Snapshot so removals made mid-loop don't affect which nodes we visit.
+        BitSet snapshot = (BitSet) this.solutionBw.clone();
+        for (int index = snapshot.nextSetBit(0); index >= 0; index = snapshot.nextSetBit(index + 1)) {
+            if (this.getSpreaderNeighs(index) >= instance.graph.get(index).size() * 0.5 && this.isIn(index)) {
+                this.removeNode(index);
+            }
         }
     }
 

@@ -1,6 +1,6 @@
 import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.lang.reflect.Array;
-import java.math.BigInteger;
 import java.util.*;
 import java.io.File;
 
@@ -178,27 +178,24 @@ public class Instance {
             }
         }
 
-        // --- Step D: Compact representatives ---
+        // --- Step D + E: Assign IDs only to nodes that appear in non-self-loop edges ---
         HashMap<Integer, Integer> repToNew = new HashMap<>();
         int nextId = 0;
-        for (int i = 0; i < n; i++) {
-            int rep = uf.find(i);
-            if (!repToNew.containsKey(rep)) {
-                repToNew.put(rep, nextId++);
-            }
-        }
-
-        // --- Step E: Build reduced edge list ---
         HashSet<Long> seen = new HashSet<>();
         ArrayList<int[]> newEdges = new ArrayList<>();
 
         for (int[] e : edges) {
             int iu = labelToIndex.get(e[0]);
             int iv = labelToIndex.get(e[1]);
-            int a = repToNew.get(uf.find(iu));
-            int b = repToNew.get(uf.find(iv));
-            if (a == b) continue;  // self-loop after merge
-            // deduplicate unordered pairs (a,b)
+            int repU = uf.find(iu);
+            int repV = uf.find(iv);
+            if (repU == repV) continue;  // self-loop after merge
+
+            if (!repToNew.containsKey(repU)) repToNew.put(repU, nextId++);
+            if (!repToNew.containsKey(repV)) repToNew.put(repV, nextId++);
+
+            int a = repToNew.get(repU);
+            int b = repToNew.get(repV);
             int min = Math.min(a, b), max = Math.max(a, b);
             long key = (((long)min) << 32) | (max & 0xffffffffL);
             if (seen.add(key)) {
@@ -358,5 +355,31 @@ public class Instance {
 
     public int getNumberEdges() {
         return numberEdges;
+    }
+
+    public void exportReducedInstance(String outputPath) {
+        try {
+            ArrayList<int[]> edges = new ArrayList<>();
+            for (Map.Entry<Integer, ArrayList<Integer>> entry : graph.entrySet()) {
+                int u = entry.getKey();
+                for (int v : entry.getValue()) {
+                    if (u < v) edges.add(new int[]{u, v});
+                }
+            }
+            edges.sort((a, b) -> a[0] != b[0] ? a[0] - b[0] : a[1] - b[1]);
+
+            PrintWriter writer = new PrintWriter(outputPath, "UTF-8");
+            writer.println(seed);
+            writer.println(k);
+            writer.println(numberNodes);
+            writer.println(edges.size());
+            for (int[] edge : edges) {
+                writer.println(edge[0] + " " + edge[1]);
+            }
+            writer.close();
+            System.out.println("Reduced instance exported to: " + outputPath);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

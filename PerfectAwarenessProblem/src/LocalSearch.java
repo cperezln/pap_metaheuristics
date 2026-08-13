@@ -1,6 +1,6 @@
-import java.math.BigInteger;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.ArrayList;
 import java.util.List;
@@ -85,9 +85,9 @@ public class LocalSearch {
             }
 
             nodesInSolution.clear();
-            BigInteger solutionBits = solution.getBitwiseRepresentation();
+            BitSet solutionBits = solution.getBitwiseRepresentation();
             for (int i = 0; i < Solution.instance.getNumberNodes(); i++) {
-                if (solutionBits.testBit(i)) {
+                if (solutionBits.get(i)) {
                     nodesInSolution.add(i);
                 }
             }
@@ -109,10 +109,10 @@ public class LocalSearch {
                         int indexJ = nodesInSolution.get(j);
 
                         // Perform swap: remove indexI and indexJ, add node
-                        BigInteger bwSol = solutionBits
-                                .clearBit(indexI)
-                                .clearBit(indexJ)
-                                .setBit(node);
+                        BitSet bwSol = (BitSet) solutionBits.clone();
+                        bwSol.clear(indexI);
+                        bwSol.clear(indexJ);
+                        bwSol.set(node);
 
                         Solution finalSol = new Solution(bwSol);
                         Solution.instance.resetState(finalSol);
@@ -122,7 +122,8 @@ public class LocalSearch {
                                 improved = true;
                                 //finalSol = new FilterUnnecesaryNodes(finalSol, e).bestSolutionFound;
                                 int improvement = this.bestSolutionFound.solutionValue() - finalSol.solutionValue();
-                                //System.out.println("LocalSearch: Improvement found! " + this.bestSolutionFound.solutionValue() + " -> " + finalSol.solutionValue() + " (gain: " + improvement + ")");
+                                long elapsedMs = Duration.between(startTime, Instant.now()).toMillis();
+                                System.out.println("LocalSearch: Improvement found! " + this.bestSolutionFound.solutionValue() + " -> " + finalSol.solutionValue() + " (gain: " + improvement + ") at " + elapsedMs + " ms");
                                 this.bestSolutionFound = finalSol;
                                 nodesInSolution.remove((Integer)indexI);
                                 nodesInSolution.remove((Integer)indexJ);

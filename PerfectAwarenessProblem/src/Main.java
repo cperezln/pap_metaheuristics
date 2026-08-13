@@ -144,7 +144,7 @@ public class Main {
     private static void processAllInstances(String inPath, String algorithm, int configIrace)
             throws FileNotFoundException, UnsupportedEncodingException {
 
-        String pathInstances = inPath + "/previous_work/instances";
+        String pathInstances = inPath + "/previous_work/youtube";
         String pathSolutions = inPath + "/previous_work/solutions";
         File dirInstances = new File(pathInstances);
 
@@ -253,6 +253,11 @@ public class Main {
         try {
             // Create NEW instance and evaluator for each thread - thread safe by isolation
             Instance instance = new Instance(localInstanceFile, localInstanceFile.getName());
+
+            // Export reduced instance
+            File reducedDir = new File("reduced");
+            if (!reducedDir.exists()) reducedDir.mkdirs();
+            instance.exportReducedInstance("reduced/" + localInstanceFile.getName());
 
             // Set the static instance for Solution class
             Solution.instance = instance;

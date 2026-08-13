@@ -22,7 +22,7 @@ public class IteratedLocalSearch {
     ArrayList<Integer> RCL = null;
     private int reconstructionIterations; // Number of iterations for reconstruction
     private int[] nodeFrequency; // Array to track how many times each node appears in solution after local search
-    ArrayList<Integer> nodesNotInSolution = new ArrayList<>(10000);
+    ArrayList<Integer> nodesNotInSolution = null;
 
     public IteratedLocalSearch(double alphaValue, Instance instance, SpreadingProcessOptimize eval, double betFactor, double degFactor, double eigFactor, int reconstructionIterations) {
         this.alphaValue = alphaValue;
@@ -95,20 +95,108 @@ public class IteratedLocalSearch {
         Solution solution = new Solution();
         // Get nodes not currently in the solution
         prepareNodesnotInSolutionforAddRandomNode(solution);
-        while (!eval.isSolution(solution) || solution.solutionValue()==0) {
-            // Check if we've exceeded the timeout
-            /*if (Duration.between(constructiveStart, Instant.now()).toMillis() > CONSTRUCTIVE_TIMEOUT_MS) {
-                // After timeout, just add random nodes until feasible
-                prepareNodesnotInSolutionforAddRandomNode(solution);
-                while (!eval.isSolution(solution) || solution.solutionValue()==0) {
-                    addRandomNode(solution);
-                }
-                break;
-            }*/
-            addRandomNode(solution);
+        final int CHECK_EVERY = 200000;
+        boolean feasible = false;
+        while (!feasible || solution.solutionValue() == 0) {
+            for (int i = 0; i < CHECK_EVERY && !nodesNotInSolution.isEmpty(); i++) {
+                addRandomNode(solution);
+            }
+            System.out.println("Size: " + solution.solutionValue());
+            feasible = eval.isSolution(solution);
         }
         //System.out.println("ILS: Constructive phase completed with value: " + solution.solutionValue());
         return solution;
+    }
+
+    /**
+     * Greedy constructive phase: at each step adds the node that maximises the
+     * number of currently-unaware nodes that would become aware, accounting for
+     * first-order spread (direct neighbours) and second-order cascade (neighbours
+     * that reach the spreader threshold and activate their own neighbourhood).
+     */
+    public Solution greedyConstructivePhase() {
+        Solution solution = new Solution();
+        instance.resetState(solution);
+        boolean feasible = eval.isSolution(solution); // populate awareNeighs + instance state
+
+        while (!feasible) {
+            //System.out.println(solution.solutionValue());
+            if (solution.solutionValue() >= 15) { //1500
+                //System.out.println(solution.solutionValue());
+                // Batch mode: score all candidates and add top 2500 at once
+                ArrayList<PairVal> scored = new ArrayList<>();
+                for (int node : instance.getNodes()) {
+                    if (solution.isIn(node)) continue;
+                    scored.add(new PairVal(node, scoreForNode(node, solution)));
+                }
+                scored.sort((a, b) -> Double.compare(b.val, a.val));
+                int batchSize = Math.min(1500, scored.size());
+                for (int i = 0; i < batchSize; i++) {
+                    solution.addNode(scored.get(i).node);
+                }
+                instance.resetState(solution);
+                feasible = eval.isSolution(solution);
+                System.out.println("Batch add, size now: " + solution.solutionValue());
+            } else {
+                int bestNode  = -1;
+                int bestScore = -1;
+
+                for (int node : instance.getNodes()) {
+                    if (solution.isIn(node)) continue;
+                    int score = scoreForNode(node, solution);
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestNode  = node;
+                    }
+                }
+
+                if (bestNode == -1) break; // should never happen on a connected graph
+                solution.addNode(bestNode);
+                instance.resetState(solution);
+                feasible = eval.isSolution(solution); // re-evaluate and refresh state
+            }
+        }
+
+        System.out.println("ILS: Greedy constructive completed with value: " + solution.solutionValue());
+        return solution;
+    }
+
+    /**
+     * Estimates the number of currently-unaware nodes that would become aware
+     * if {@code node} were added as a seed.
+     *
+     * First order:  node itself (if unaware) + every unaware direct neighbour.
+     * Second order: for each neighbour that is not yet a spreader, if adding
+     *               {@code node} as a spreader pushes its spreader-count to the
+     *               activation threshold (>= degree/2), we also count that
+     *               neighbour's unaware neighbours.
+     *
+     * Requires {@code eval.isSolution(solution)} to have been called beforehand
+     * so that {@code solution.getAwareNeighs()} and the instance state are fresh.
+     */
+    private int scoreForNode(int node, Solution solution) {
+        int score = 0;
+
+        // Node itself is unaware → becomes aware when seeded
+        if (instance.getNodeState(node) == 0) score++;
+
+        for (int neigh : instance.graph.get(node)) {
+            // Direct activation: every unaware neighbour of 'node' becomes aware
+            if (instance.getNodeState(neigh) == 0) score++;
+
+            // Second-order cascade: if 'neigh' would now reach the spreader threshold,
+            // count its own unaware neighbours as additional gain
+            if (!solution.isIn(neigh) && instance.getNodeState(neigh) != 2) {
+                int spreaderNeighs = solution.getAwareNeighs(neigh); // spreaders around neigh
+                if (spreaderNeighs + 1 >= instance.graph.get(neigh).size() * 0.5) {
+                    for (int nn : instance.graph.get(neigh)) {
+                        if (instance.getNodeState(nn) == 0) score++;
+                    }
+                }
+            }
+        }
+
+        return score;
     }
 
     public Solution localSearch(Solution solution, Instant startTime, int ilsIteration) {
@@ -154,23 +242,25 @@ public class IteratedLocalSearch {
         //destructGreedy(nodesToRemove, nodesInSolution, perturbedSol);
         instance.resetState(perturbedSol);
 
-        Instant reconstructionStart = Instant.now();
-        final long RECONSTRUCTION_TIMEOUT_MS = 3000; // 3 seconds timeout per reconstruction
-        boolean timeoutReached = false;
-        //Get nodes not currently in the solution
-        prepareNodesnotInSolutionforAddRandomNode(perturbedSol);
         while (!eval.isSolution(perturbedSol)) {
             if (Duration.between(perturbationStart, Instant.now()).toMillis() > TestRunner.TIME_LIMIT_MS) {
                 return solution;
             }
-            if (Duration.between(reconstructionStart, Instant.now()).toMillis() > RECONSTRUCTION_TIMEOUT_MS) {
-                if (!timeoutReached) {
-                    timeoutReached = true;
-                    prepareNodesnotInSolutionforAddRandomNode(perturbedSol);
+            /*int bestNode  = -1;
+            int bestScore = -1;
+            for (int node : instance.getNodes()) {
+                if (perturbedSol.isIn(node)) continue;
+                int score = scoreForNode(node, perturbedSol);
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestNode  = node;
                 }
             }
-            if(timeoutReached) addRandomNode(perturbedSol);
-            else addRandomNode(perturbedSol);
+            if (bestNode == -1) break;
+            perturbedSol.addNode(bestNode);*/
+            prepareNodesnotInSolutionforAddRandomNode(perturbedSol); //RND
+            addRandomNode(perturbedSol); //RND
+            //instance.resetState(perturbedSol);
         }
         return perturbedSol;
     }
@@ -252,6 +342,7 @@ public class IteratedLocalSearch {
 
         // Initialize PrintWriter for time to best output
         String instanceName = instance.name;
+        nodesNotInSolution = new ArrayList<>(instance.getNumberNodes());
         // Create time_to_best directory if it doesn't exist
         java.io.File timeToBestDir = new java.io.File("time_to_best");
         if (!timeToBestDir.exists()) {
@@ -310,12 +401,12 @@ public class IteratedLocalSearch {
                 RCL = null;
 
                 // Constructive phase
-                Solution tempSolution = constructivePhase();
+                Solution tempSolution = greedyConstructivePhase();
                 int tempConstructiveOF = tempSolution.solutionValue();
 
                 // Write constructive solution to file
                 writeSolutionToFile(tempSolution, instanceName, "Constructivo", startTime);
-
+                tempSolution = new FilterUnnecesaryNodes(tempSolution, eval).bestSolutionFound;
                 // Local search phase
                 tempSolution = localSearch(tempSolution, startTime, initIter);
                 int tempLsOF = tempSolution.solutionValue();
@@ -396,7 +487,7 @@ public class IteratedLocalSearch {
                 // Reinicio si hay demasiadas iteraciones sin mejora
                 if (iterationsWithoutImprovement >= MAX_ITERATIONS_WITHOUT_IMPROVEMENT) {
                     //System.out.println(String.format("ILS: Restart at iteration %d - reconstructing solution...", iteration));
-                    currentSolution = constructivePhase();
+                    currentSolution = greedyConstructivePhase();
                     currentSolution = localSearch(currentSolution, startTime, iteration);
                     iterationsWithoutImprovement = 0;
                     //System.out.println(String.format("ILS: After restart, current solution value: %d", currentSolution.solutionValue()));
